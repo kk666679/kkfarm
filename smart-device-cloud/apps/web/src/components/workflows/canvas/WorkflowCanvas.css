@@ -1,0 +1,39 @@
+.workflow-canvas {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes react-flow-edge-dash {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+.react-flow__edge--animated path {
+  animation: react-flow-edge-dash 1s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-flow__edge--animated path {
+    animation: none;
+  }
+}
+
+@keyframes react-flow-edge-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.react-flow__edge--error path {
+  animation: react-flow-edge-pulse 1.5s ease-in-out infinite;
+}
+
+.react-flow__connection-path {
+  fill: none;
+}

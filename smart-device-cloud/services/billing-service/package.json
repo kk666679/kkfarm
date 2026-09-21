@@ -1,0 +1,27 @@
+{
+  "name": "@sdc/billing-service",
+  "version": "1.0.0",
+  "description": "Smart Device Cloud billing and metering service",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "vitest",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@smart-device-cloud/shared": "file:../../shared",
+    "@opentelemetry/api": "^1.9.1",
+    "zod": "^4.6.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.2",
+    "typescript": "^6.0.3",
+    "tsx": "^4.23.13",
+    "vitest": "^5.0.0"
+  }
+}

@@ -1,0 +1,9 @@
+profiles:
+  - id: pixel9-us
+    device_model: "Pixel 9"
+    carrier: "T-Mobile"
+    locale: "en-US"
+  - id: s24-gb
+    device_model: "SM-S921B"
+    carrier: "EE"
+    locale: "en-GB"

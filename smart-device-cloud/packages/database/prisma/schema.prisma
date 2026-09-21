@@ -1,0 +1,1133 @@
+// ─────────────────────────────────────────────────────────────────────────────
+//  PhoneFarming — Self-Hosted Android Device Farm
+//  Prisma ORM v7 schema  ·  single source of truth
+//
+//  v7 requirements reflected:
+//    • provider = "prisma-client"  (Rust-free client)
+//    • output is REQUIRED
+//    • datasource url lives in prisma.config.ts, not here
+//    • ESM only — set "type": "module" in package.json
+//    • Driver adapter required at runtime (@prisma/adapter-pg)
+// ─────────────────────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+  // url / directUrl / shadowDatabaseUrl → prisma.config.ts
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  ENUMS
+// ═════════════════════════════════════════════════════════════════════════════
+
+// ── Tenancy & Access ─────────────────────────────────────────────────────────
+enum TenantPlan {
+  FREE
+  STARTER
+  GROWTH
+  SCALE
+  ENTERPRISE
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  TRIAL
+  CHURNED
+}
+
+enum UserRole {
+  OWNER
+  ADMINISTRATOR
+  OPERATOR
+  DEVELOPER
+  VIEWER
+}
+
+enum UserStatus {
+  ACTIVE
+  INVITED
+  SUSPENDED
+  DELETED
+}
+
+// ── Device Lifecycle ─────────────────────────────────────────────────────────
+enum DeviceStatus {
+  PROVISIONING
+  ONLINE
+  OFFLINE
+  BUSY
+  DEGRADED
+  ERROR
+  STOPPED
+  ARCHIVED
+}
+
+enum DeviceType {
+  PHYSICAL
+  EMULATOR
+  CLOUD
+}
+
+enum DeviceOS {
+  ANDROID
+  HARMONYOS
+}
+
+enum DeviceProviderKind {
+  LOCAL_ADB
+  DOCKER_EMULATOR
+  CLOUD_VENDOR
+  MOCK
+}
+
+enum DeviceActionKind {
+  START
+  STOP
+  RESTART
+  REBOOT
+  WIPE
+  SNAPSHOT
+  RESTORE
+}
+
+// ── Groups ───────────────────────────────────────────────────────────────────
+enum DeviceGroupStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+// ── Workflows ────────────────────────────────────────────────────────────────
+enum WorkflowStatus {
+  DRAFT
+  ACTIVE
+  RUNNING
+  PAUSED
+  CANCELLED
+  ARCHIVED
+}
+
+enum WorkflowRunStatus {
+  QUEUED
+  RUNNING
+  SUCCESS
+  FAILED
+  CANCELLED
+  TIMED_OUT
+}
+
+enum WorkflowNodeKind {
+  TRIGGER
+  ACTION
+  CONDITION
+  DELAY
+  LOOP
+  SUBWORKFLOW
+  END
+}
+
+enum WorkflowStepStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+  SKIPPED
+}
+
+// ── Workloads ────────────────────────────────────────────────────────────────
+enum WorkloadStatus {
+  DRAFT
+  READY
+  RUNNING
+  PAUSED
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+// ── Tasks & Jobs ─────────────────────────────────────────────────────────────
+enum TaskType {
+  DEVICE_PROVISION
+  DEVICE_COMMAND
+  DEVICE_HEALTH_CHECK
+  WORKFLOW_RUN
+  WORKLOAD_RUN
+  APP_INSTALL
+  APP_UNINSTALL
+  SCREENSHOT
+  LOG_COLLECT
+  CUSTOM
+}
+
+enum TaskPriority {
+  LOW
+  NORMAL
+  HIGH
+  CRITICAL
+}
+
+enum TaskStatus {
+  QUEUED
+  SCHEDULED
+  RUNNING
+  SUCCESS
+  FAILED
+  CANCELLED
+  RETRYING
+}
+
+enum JobStatus {
+  ENABLED
+  DISABLED
+  PAUSED
+}
+
+// ── Alerts & Audit ───────────────────────────────────────────────────────────
+enum AlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum AlertStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+  SUPPRESSED
+}
+
+// ── Applications ─────────────────────────────────────────────────────────────
+enum ApplicationStatus {
+  AVAILABLE
+  INSTALLING
+  INSTALLED
+  FAILED
+  ROLLED_BACK
+  UNINSTALLED
+}
+
+// ── Intelligence ─────────────────────────────────────────────────────────────
+enum RecommendationStatus {
+  PENDING
+  ACCEPTED
+  DISMISSED
+  APPLIED
+}
+
+enum RecommendationCategory {
+  COST
+  PERFORMANCE
+  RELIABILITY
+  SECURITY
+  CAPACITY
+}
+
+// ── Security ─────────────────────────────────────────────────────────────────
+enum ComplianceResult {
+  PASS
+  FAIL
+  WARN
+  UNKNOWN
+}
+
+// ── Cost ─────────────────────────────────────────────────────────────────────
+enum CostCategory {
+  COMPUTE
+  STORAGE
+  NETWORK
+  AUTOMATION
+  PROXY
+  API_CALLS
+  OTHER
+}
+
+// ── Telemetry ────────────────────────────────────────────────────────────────
+enum TelemetryMetric {
+  CPU_PERCENT
+  MEMORY_PERCENT
+  STORAGE_PERCENT
+  BATTERY_PERCENT
+  NETWORK_RX_BYTES
+  NETWORK_TX_BYTES
+  TEMPERATURE_C
+  BATTERY_TEMPERATURE_C
+  UPTIME_SECONDS
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  TENANCY
+// ═════════════════════════════════════════════════════════════════════════════
+
+model Tenant {
+  id          String       @id @default(uuid()) @db.Uuid
+  slug        String       @unique
+  name        String
+  plan        TenantPlan   @default(FREE)
+  status      TenantStatus @default(ACTIVE)
+  regionCode  String?                          // primary region
+  metadata    Json?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  users         User[]
+  apiKeys       ApiKey[]
+  devices       Device[]
+  deviceGroups  DeviceGroup[]
+  deviceProfiles DeviceProfile[]
+  providers     DeviceProvider[]
+  workflows     Workflow[]
+  workloads     Workload[]
+  tasks         Task[]
+  jobs          Job[]
+  alerts        Alert[]
+  auditLogs     AuditLog[]
+  applications  Application[]
+  recommendations Recommendation[]
+  costRecords   CostRecord[]
+  costSummaries CostSummary[]
+  telemetry     TelemetrySample[]
+  accounts      ProvisioningAccount[]
+  compliance    ComplianceCheck[]
+
+  @@index([slug])
+  @@index([plan])
+  @@index([status])
+}
+
+model User {
+  id             String     @id @default(uuid()) @db.Uuid
+  tenantId       String     @db.Uuid
+  email          String
+  username       String?
+  passwordHash   String?
+  displayName    String?
+  avatarUrl      String?
+  role           UserRole   @default(VIEWER)
+  status         UserStatus @default(ACTIVE)
+  permissions    String[]   @default([])       // fine-grained overrides
+  lastLoginAt    DateTime?
+  invitedById    String?    @db.Uuid
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  tenant        Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invitedBy     User?      @relation("UserInvites", fields: [invitedById], references: [id], onDelete: SetNull)
+  invitees      User[]     @relation("UserInvites")
+  apiKeys       ApiKey[]
+  sessions      AuthSession[]
+  auditLogs     AuditLog[]
+  alerts        Alert[]
+  workflows     Workflow[]      @relation("WorkflowAuthor")
+  tasks         Task[]          @relation("TaskAuthor")
+  jobs          Job[]           @relation("JobAuthor")
+  reservations  Reservation[]
+  preferences   UserPreference?
+
+  @@unique([tenantId, email])
+  @@unique([tenantId, username])
+  @@index([tenantId])
+  @@index([role])
+  @@index([status])
+}
+
+model UserPreference {
+  id                   String   @id @default(uuid()) @db.Uuid
+  userId               String   @unique @db.Uuid
+  theme                String   @default("dark")
+  language             String   @default("en")
+  timezone             String   @default("UTC")
+  emailNotifications   Boolean  @default(true)
+  pushNotifications    Boolean  @default(false)
+  weeklyDigest         Boolean  @default(true)
+  defaultRegionCode    String?
+  defaultProfileId     String?  @db.Uuid
+  defaultGroupId       String?  @db.Uuid
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  user                 User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  defaultProfile       DeviceProfile?  @relation(fields: [defaultProfileId], references: [id], onDelete: SetNull)
+  defaultGroup         DeviceGroup?    @relation(fields: [defaultGroupId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+}
+
+model ApiKey {
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @db.Uuid
+  userId      String?   @db.Uuid
+  name        String
+  keyHash     String    @unique
+  prefix      String    @unique
+  scopes      String[]  @default([])
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([prefix])
+  @@index([revokedAt])
+}
+
+model AuthSession {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @db.Uuid
+  refreshHash  String    @unique
+  userAgent    String?
+  ipAddress    String?
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  lastSeenAt   DateTime  @default(now())
+
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  DEVICE FARM
+// ═════════════════════════════════════════════════════════════════════════════
+
+model DeviceProvider {
+  id            String             @id @default(uuid()) @db.Uuid
+  tenantId      String             @db.Uuid
+  slug          String                                    // e.g. "docker-emulator"
+  name          String
+  kind          DeviceProviderKind
+  config        Json               @default("{}")
+  isActive      Boolean            @default(true)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  devices       Device[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@index([isActive])
+}
+
+model DeviceProfile {
+  id                String     @id @default(uuid()) @db.Uuid
+  tenantId          String     @db.Uuid
+  slug              String                                // "pixel-8-arm"
+  name              String
+  manufacturer      String
+  model             String
+  os                DeviceOS   @default(ANDROID)
+  osVersion         String
+  apiLevel          Int
+  cpuArch           String     @default("arm64-v8a")
+  cpuCores          Int
+  ramMb             Int
+  storageMb         Int
+  screenWidth       Int
+  screenHeight      Int
+  dpi               Int
+  buildFingerprint  String?
+  tags              String[]   @default([])
+  category          String?
+  priority          Int        @default(0)
+  status            String     @default("draft")         // draft | published | archived
+  version           Int        @default(1)
+  content           Json?                                 // full profile blob
+  isActive          Boolean    @default(true)
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  tenant            Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  devices           Device[]
+  versions          DeviceProfileVersion[]
+  preferences       UserPreference[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@index([status])
+  @@index([isActive])
+  @@index([updatedAt])
+}
+
+model DeviceProfileVersion {
+  id           String        @id @default(uuid()) @db.Uuid
+  profileId    String        @db.Uuid
+  version      Int
+  content      Json
+  changeNote   String?
+  createdById  String?       @db.Uuid
+  createdAt    DateTime      @default(now())
+
+  profile      DeviceProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, version])
+  @@index([profileId])
+}
+
+model DeviceGroup {
+  id           String             @id @default(uuid()) @db.Uuid
+  tenantId     String             @db.Uuid
+  name         String
+  slug         String
+  description  String?
+  parentId     String?            @db.Uuid
+  path         String             @default("/")           // materialized hierarchy path
+  depth        Int                @default(0)
+  status       DeviceGroupStatus  @default(ACTIVE)
+  tags         String[]           @default([])
+  metadata     Json?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  tenant       Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  parent       DeviceGroup?       @relation("GroupHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children     DeviceGroup[]      @relation("GroupHierarchy")
+  devices      Device[]
+  preferences  UserPreference[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@index([parentId])
+  @@index([path])
+  @@index([status])
+}
+
+model Device {
+  id                String        @id @default(uuid()) @db.Uuid
+  tenantId          String        @db.Uuid
+  name              String
+  serial            String
+  type              DeviceType    @default(EMULATOR)
+  status            DeviceStatus  @default(PROVISIONING)
+  profileId         String?       @db.Uuid
+  groupId           String?       @db.Uuid
+  providerId        String?       @db.Uuid
+  regionCode        String?
+  hostname          String?
+  ipAddress         String?
+
+  // Runtime coordinates
+  containerId       String?
+  adbHost           String?
+  adbPort           Int?
+  osVersion         String?
+  apiLevel          Int?
+  cpuArch           String?
+  screenWidth       Int?
+  screenHeight      Int?
+  dpi               Int?
+
+  // Fingerprint isolation
+  imei              String?
+  macAddress        String?
+  androidId         String?
+  advertisingId     String?
+  buildFingerprint  String?
+
+  // Lifecycle timestamps
+  bootedAt          DateTime?
+  stoppedAt         DateTime?
+  lastSeenAt        DateTime?
+  lastHealthAt      DateTime?
+  healthScore       Float?
+  metadata          Json?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  tenant            Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  profile           DeviceProfile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
+  group             DeviceGroup?  @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  provider          DeviceProvider? @relation(fields: [providerId], references: [id], onDelete: SetNull)
+
+  actions           DeviceAction[]
+  healthChecks      DeviceHealthCheck[]
+  tasks             Task[]
+  telemetry         TelemetrySample[]
+  alerts            Alert[]
+  applicationInstalls ApplicationInstall[]
+  workloadExecutions WorkloadExecution[]
+  sessions          DeviceSession[]
+  costRecords       CostRecord[]
+  compliance        ComplianceCheck[]
+
+  @@unique([tenantId, serial])
+  @@index([tenantId])
+  @@index([status])
+  @@index([type])
+  @@index([groupId])
+  @@index([profileId])
+  @@index([providerId])
+  @@index([regionCode])
+  @@index([lastSeenAt])
+}
+
+model DeviceAction {
+  id          String            @id @default(uuid()) @db.Uuid
+  deviceId    String            @db.Uuid
+  kind        DeviceActionKind
+  status      TaskStatus        @default(QUEUED)
+  requestedBy String?           @db.Uuid
+  payload     Json?
+  result      Json?
+  error       String?
+  startedAt   DateTime?
+  finishedAt  DateTime?
+  createdAt   DateTime          @default(now())
+
+  device      Device            @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId])
+  @@index([kind])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model DeviceHealthCheck {
+  id          String     @id @default(uuid()) @db.Uuid
+  deviceId    String     @db.Uuid
+  healthy     Boolean
+  score       Float?
+  checks      Json                                // { adb: "pass", boot: "pass", … }
+  latencyMs   Int?
+  error       String?
+  recordedAt  DateTime   @default(now())
+
+  device      Device     @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId])
+  @@index([recordedAt])
+  @@index([healthy])
+}
+
+model DeviceSession {
+  id            String   @id @default(uuid()) @db.Uuid
+  deviceId      String   @db.Uuid
+  userId        String?  @db.Uuid
+  startedAt     DateTime @default(now())
+  endedAt       DateTime?
+  durationSec   Int?
+  bytesSent     BigInt   @default(0)
+  bytesReceived BigInt   @default(0)
+  recordingUrl  String?
+  metadata      Json?
+
+  device        Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId])
+  @@index([userId])
+  @@index([startedAt])
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  PROVISIONING
+// ═════════════════════════════════════════════════════════════════════════════
+
+model ProvisioningAccount {
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @db.Uuid
+  label       String
+  providerSlug String
+  credentials Json                               // encrypted at rest
+  isActive    Boolean   @default(true)
+  lastUsedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, label])
+  @@index([tenantId])
+  @@index([isActive])
+}
+
+model ProvisioningRequest {
+  id           String    @id @default(uuid()) @db.Uuid
+  tenantId     String    @db.Uuid
+  providerSlug String
+  profileSlug  String
+  accountId    String?   @db.Uuid
+  groupId      String?   @db.Uuid
+  count        Int       @default(1)
+  status       TaskStatus @default(QUEUED)
+  deviceIds    String[]  @default([])
+  error        String?
+  createdAt    DateTime  @default(now())
+  finishedAt   DateTime?
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  WORKFLOWS
+// ═════════════════════════════════════════════════════════════════════════════
+
+model Workflow {
+  id           String          @id @default(uuid()) @db.Uuid
+  tenantId     String          @db.Uuid
+  name         String
+  description  String?
+  status       WorkflowStatus  @default(DRAFT)
+  version      Int             @default(1)
+  nodes        Json            @default("[]")     // node graph
+  edges        Json            @default("[]")     // edge list
+  tags         String[]        @default([])
+  createdById  String?         @db.Uuid
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  tenant       Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy    User?           @relation("WorkflowAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+  runs         WorkflowExecution[]
+  steps        WorkflowStep[]
+  schedules    Job[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@index([status])
+  @@index([updatedAt])
+}
+
+model WorkflowStep {
+  id          String            @id @default(uuid()) @db.Uuid
+  workflowId  String            @db.Uuid
+  order       Int
+  kind        WorkflowNodeKind
+  name        String
+  action      String?                                 // "tap", "type", "openApp", …
+  config      Json?
+  timeoutMs   Int               @default(30000)
+  retryCount  Int               @default(0)
+  isOptional  Boolean           @default(false)
+
+  workflow    Workflow          @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  stepRuns    WorkflowStepRun[]
+
+  @@unique([workflowId, order])
+  @@index([workflowId])
+}
+
+model WorkflowExecution {
+  id           String             @id @default(uuid()) @db.Uuid
+  workflowId   String             @db.Uuid
+  deviceId     String?            @db.Uuid
+  status       WorkflowRunStatus  @default(QUEUED)
+  triggeredBy  String?                                // "manual" | "schedule" | "api"
+  triggerRef   String?
+  currentStepId String?           @db.Uuid
+  startedAt    DateTime?
+  finishedAt   DateTime?
+  durationMs   Int?
+  errorMessage String?
+  output       Json?
+  createdAt    DateTime           @default(now())
+
+  workflow     Workflow           @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  stepRuns     WorkflowStepRun[]
+
+  @@index([workflowId])
+  @@index([deviceId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model WorkflowStepRun {
+  id           String             @id @default(uuid()) @db.Uuid
+  executionId  String             @db.Uuid
+  stepId       String             @db.Uuid
+  status       WorkflowStepStatus @default(PENDING)
+  attempt      Int                @default(1)
+  startedAt    DateTime?
+  finishedAt   DateTime?
+  durationMs   Int?
+  output       Json?
+  errorMessage String?
+
+  execution    WorkflowExecution  @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  step         WorkflowStep       @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+  @@index([executionId])
+  @@index([stepId])
+  @@index([status])
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  WORKLOADS
+// ═════════════════════════════════════════════════════════════════════════════
+
+model Workload {
+  id           String         @id @default(uuid()) @db.Uuid
+  tenantId     String         @db.Uuid
+  name         String
+  description  String?
+  status       WorkloadStatus @default(DRAFT)
+  scriptRef    String?                                // path to script / bundle
+  config       Json           @default("{}")
+  tags         String[]       @default([])
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  tenant       Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  executions   WorkloadExecution[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@index([status])
+}
+
+model WorkloadExecution {
+  id           String         @id @default(uuid()) @db.Uuid
+  workloadId   String         @db.Uuid
+  status       WorkloadStatus @default(RUNNING)
+  deviceIds    String[]       @default([])
+  startedAt    DateTime       @default(now())
+  finishedAt   DateTime?
+  durationMs   Int?
+  result       Json?
+  error        String?
+
+  workload     Workload       @relation(fields: [workloadId], references: [id], onDelete: Cascade)
+  devices      Device[]
+
+  @@index([workloadId])
+  @@index([status])
+  @@index([startedAt])
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  TASKS & JOBS
+// ═════════════════════════════════════════════════════════════════════════════
+
+model Task {
+  id            String        @id @default(uuid()) @db.Uuid
+  tenantId      String        @db.Uuid
+  deviceId      String?       @db.Uuid
+  createdById   String?       @db.Uuid
+  type          TaskType
+  priority      TaskPriority  @default(NORMAL)
+  status        TaskStatus    @default(QUEUED)
+  payload       Json?
+  result        Json?
+  errorMessage  String?
+  attempts      Int           @default(0)
+  maxAttempts   Int           @default(3)
+  scheduledFor  DateTime?
+  startedAt     DateTime?
+  finishedAt    DateTime?
+  durationMs    Int?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  device        Device?       @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  createdBy     User?         @relation("TaskAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+  events        TaskEvent[]
+
+  @@index([tenantId])
+  @@index([deviceId])
+  @@index([status])
+  @@index([type])
+  @@index([priority])
+  @@index([createdAt])
+  @@index([scheduledFor])
+}
+
+model TaskEvent {
+  id        String   @id @default(uuid()) @db.Uuid
+  taskId    String   @db.Uuid
+  level     String   @default("info")
+  message   String
+  data      Json?
+  createdAt DateTime @default(now())
+
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([createdAt])
+}
+
+model Job {
+  id             String     @id @default(uuid()) @db.Uuid
+  tenantId       String     @db.Uuid
+  workflowId     String?    @db.Uuid
+  createdById    String?    @db.Uuid
+  name           String
+  cron           String
+  timezone       String     @default("UTC")
+  status         JobStatus  @default(ENABLED)
+  taskTemplate   Json
+  lastRunAt      DateTime?
+  nextRunAt      DateTime?
+  lastStatus     TaskStatus?
+  runCount       Int        @default(0)
+  failureCount   Int        @default(0)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  tenant         Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  workflow       Workflow?  @relation(fields: [workflowId], references: [id], onDelete: SetNull)
+  createdBy      User?      @relation("JobAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([nextRunAt])
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  APPLICATIONS
+// ═════════════════════════════════════════════════════════════════════════════
+
+model Application {
+  id            String             @id @default(uuid()) @db.Uuid
+  tenantId      String             @db.Uuid
+  slug          String
+  name          String
+  packageName   String
+  version       String
+  iconUrl       String?
+  description   String?
+  status        ApplicationStatus  @default(AVAILABLE)
+  artifactUrl   String?
+  artifactSize  BigInt?
+  checksum      String?
+  metadata      Json?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  installs      ApplicationInstall[]
+
+  @@unique([tenantId, slug])
+  @@unique([tenantId, packageName, version])
+  @@index([tenantId])
+  @@index([status])
+}
+
+model ApplicationInstall {
+  id             String             @id @default(uuid()) @db.Uuid
+  applicationId  String             @db.Uuid
+  deviceId       String             @db.Uuid
+  status         ApplicationStatus  @default(INSTALLING)
+  installedAt    DateTime?
+  rolledBackAt   DateTime?
+  errorMessage   String?
+  createdAt      DateTime           @default(now())
+
+  application    Application        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  device         Device             @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@unique([applicationId, deviceId])
+  @@index([applicationId])
+  @@index([deviceId])
+  @@index([status])
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  OBSERVABILITY
+// ═════════════════════════════════════════════════════════════════════════════
+
+model Alert {
+  id              String        @id @default(uuid()) @db.Uuid
+  tenantId        String        @db.Uuid
+  deviceId        String?       @db.Uuid
+  userId          String?       @db.Uuid
+  severity        AlertSeverity @default(WARNING)
+  status          AlertStatus   @default(OPEN)
+  title           String
+  message         String
+  source          String?
+  dedupeKey       String?
+  metadata        Json?
+  acknowledgedAt  DateTime?
+  resolvedAt      DateTime?
+  resolvedById    String?       @db.Uuid
+  createdAt       DateTime      @default(now())
+
+  tenant          Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  device          Device?       @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  user            User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([severity])
+  @@index([status])
+  @@index([deviceId])
+  @@index([dedupeKey])
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @db.Uuid
+  userId      String?  @db.Uuid
+  action      String                              // "workflow_create", "device_stop", …
+  entityType  String?
+  entityId    String?
+  summary     String
+  before      Json?
+  after       Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+model TelemetrySample {
+  id          String          @id @default(uuid()) @db.Uuid
+  tenantId    String          @db.Uuid
+  deviceId    String          @db.Uuid
+  metric      TelemetryMetric
+  value       Float
+  unit        String?
+  recordedAt  DateTime        @default(now())
+
+  tenant      Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  device      Device          @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([deviceId])
+  @@index([metric])
+  @@index([recordedAt])
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  COST
+// ═════════════════════════════════════════════════════════════════════════════
+
+model CostRecord {
+  id           String       @id @default(uuid()) @db.Uuid
+  tenantId     String       @db.Uuid
+  deviceId     String?      @db.Uuid
+  category     CostCategory
+  amountCents  Int
+  currency     String       @default("USD")
+  quantity     Float?
+  unit         String?                             // "device-minute", "GB", …
+  description  String?
+  periodStart  DateTime
+  periodEnd    DateTime
+  createdAt    DateTime     @default(now())
+
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  device       Device?      @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([deviceId])
+  @@index([category])
+  @@index([periodStart])
+}
+
+model CostSummary {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @db.Uuid
+  periodStart     DateTime
+  periodEnd       DateTime
+  totalCents      Int
+  currency        String   @default("USD")
+  byCategory      Json                              // { compute: 1234, … }
+  byRegion        Json
+  costPerDevice   Float?
+  changePercent   Float?
+  exceeded        Boolean  @default(false)
+  budgetCents     Int?
+  createdAt       DateTime @default(now())
+
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, periodStart, periodEnd])
+  @@index([tenantId])
+  @@index([periodStart])
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  INTELLIGENCE
+// ═════════════════════════════════════════════════════════════════════════════
+
+model Recommendation {
+  id            String                  @id @default(uuid()) @db.Uuid
+  tenantId      String                  @db.Uuid
+  deviceId      String?                 @db.Uuid
+  category      RecommendationCategory
+  status        RecommendationStatus    @default(PENDING)
+  title         String
+  body          String
+  impactScore   Float?
+  confidence    Float?
+  metadata      Json?
+  acceptedAt    DateTime?
+  dismissedAt   DateTime?
+  appliedAt     DateTime?
+  expiresAt     DateTime?
+  createdAt     DateTime                @default(now())
+
+  tenant        Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([category])
+  @@index([createdAt])
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  SECURITY / COMPLIANCE
+// ═════════════════════════════════════════════════════════════════════════════
+
+model ComplianceCheck {
+  id          String            @id @default(uuid()) @db.Uuid
+  tenantId    String            @db.Uuid
+  deviceId    String?           @db.Uuid
+  checkName   String                                  // "encryption", "root_policy", …
+  result      ComplianceResult  @default(UNKNOWN)
+  details     Json?
+  checkedAt   DateTime          @default(now())
+
+  tenant      Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  device      Device?           @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([deviceId])
+  @@index([checkName])
+  @@index([checkedAt])
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  SUPPORT
+// ═════════════════════════════════════════════════════════════════════════════
+
+model Reservation {
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @db.Uuid
+  userId      String    @db.Uuid
+  title       String
+  description String?
+  startAt     DateTime
+  endAt       DateTime
+  status      String    @default("pending")           // pending | confirmed | cancelled
+  deviceIds   String[]  @default([])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tenantId])
+  @@index([status])
+  @@index([startAt])
+}

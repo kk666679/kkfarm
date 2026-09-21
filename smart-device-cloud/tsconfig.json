@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    "target": "ES2024",
+    "module": "ESNext",
+    "lib": ["ES2024"],
+    "moduleResolution": "bundler",
+    "strict": true,
+    "exactOptionalPropertyTypes": false,
+    "noUncheckedIndexedAccess": false,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "noEmit": true
+  },
+  "include": [],
+  "exclude": ["node_modules", "dist", "build", ".git"],
+  "references": [
+    { "path": "./shared" },
+    { "path": "./packages/android-emulator" },
+    { "path": "./packages/device-ai" },
+    { "path": "./packages/device-protocol" },
+    { "path": "./packages/integration-hub" },
+    { "path": "./packages/mcp" },
+    { "path": "./packages/multi-account-browser" },
+    { "path": "./packages/remote-phone" },
+    { "path": "./packages/ui-components" },
+    { "path": "./packages/workflow-engine" },
+    { "path": "./packages/database" },
+    { "path": "./services/api-gateway" },
+    { "path": "./services/telemetry-service" },
+    { "path": "./services/workload-manager" },
+    { "path": "./services/analytics-service" },
+    { "path": "./services/device-agent" },
+    { "path": "./services/billing-service" },
+    { "path": "./apps/admin-dashboard" },
+    { "path": "./packages/users-dashboard"},
+    { "path": "./apps/partner-portal" }
+  ]
+}

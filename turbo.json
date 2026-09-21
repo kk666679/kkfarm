@@ -1,0 +1,60 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "concurrency": "12",
+  "globalEnv": [
+    "NODE_ENV",
+    "CI",
+    "VERCEL",
+    "VERCEL_ENV",
+    "VERCEL_URL"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", "build/**", ".next/**", "!.next/cache/**"],
+      "env": [
+        "DATABASE_URL",
+        "POSTGRES_URL",
+        "PRISMA_DATABASE_URL",
+        "REDIS_URL",
+        "JWT_ISSUER",
+        "JWT_AUDIENCE",
+        "JWKS_URI",
+        "VITE_API_URL",
+        "VITE_WS_URL"
+      ]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "env": [
+        "DATABASE_URL",
+        "POSTGRES_URL",
+        "PRISMA_DATABASE_URL",
+        "REDIS_URL",
+        "JWT_ISSUER",
+        "JWT_AUDIENCE",
+        "JWKS_URI",
+        "PORT",
+        "VITE_API_URL",
+        "VITE_WS_URL",
+        "API_PORT",
+        "VITE_PORT"
+      ]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
+    "type-check": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"],
+      "env": ["DATABASE_URL", "POSTGRES_URL", "REDIS_URL"]
+    },
+    "lint": { "outputs": [] }
+  }
+}

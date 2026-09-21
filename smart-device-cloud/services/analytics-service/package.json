@@ -1,0 +1,33 @@
+{
+  "name": "@smartcloud/analytics-service",
+  "version": "1.0.0",
+  "description": "Smart Device Cloud Analytics Service",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "vitest",
+    "lint": "eslint src --ext .ts",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@smart-device-cloud/shared": "file:../../shared",
+    "@tensorflow/tfjs": "^4.2.2",
+    "redis": "^6.2.1",
+    "pg": "^8.23.0",
+    "zod": "^4.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.2",
+    "@types/pg": "^8.23.1",
+    "typescript": "^6.0.3",
+    "tsx": "^4.23.13",
+    "vitest": "^5.0.0",
+    "eslint": "^10.10.0",
+    "@typescript-eslint/eslint-plugin": "^8.18.0",
+    "@typescript-eslint/parser": "^8.18.0"
+  }
+}

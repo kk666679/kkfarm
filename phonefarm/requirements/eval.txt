@@ -1,0 +1,10 @@
+# ============================================================================
+# EVAL REQUIREMENTS - Multi-dimensional Evaluation
+# ============================================================================
+# Install with: pip install -r requirements/eval.txt
+
+# DeepEval - LLM evaluation framework
+deepeval>=2.0.0
+
+# RAGAS - RAG evaluation
+ragas>=0.2.0

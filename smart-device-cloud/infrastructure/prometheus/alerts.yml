@@ -1,0 +1,27 @@
+groups:
+  - name: sdc.availability
+    rules:
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels: { severity: critical }
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+
+  - name: sdc.latency
+    rules:
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, rate(mcp_request_duration_ms_bucket[5m])) > 2000
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "MCP p95 latency > 2s"
+
+  - name: sdc.billing
+    rules:
+      - alert: BillingServiceDown
+        expr: up{job="billing-service"} == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: "Billing service is unreachable"

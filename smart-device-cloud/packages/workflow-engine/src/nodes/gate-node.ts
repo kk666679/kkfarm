@@ -1,0 +1,1 @@
+export { GateWorkflowNode } from './registry';

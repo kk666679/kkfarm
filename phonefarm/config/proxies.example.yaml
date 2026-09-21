@@ -1,0 +1,7 @@
+proxies:
+  - endpoint: "socks5://proxy-a.example:1080"
+    country: US
+  - endpoint: "socks5://proxy-b.example:1080"
+    country: GB
+  - endpoint: "socks5://proxy-c.example:1080"
+    country: DE

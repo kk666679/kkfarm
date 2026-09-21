@@ -1,0 +1,100 @@
+# ============================================================================
+# INFERENCE REQUIREMENTS - Minimal Dependencies for Production Inference
+# ============================================================================
+# Install with: pip install -r requirements/inference.txt
+# This is the minimal set of dependencies for running inference only
+
+# ============================================================================
+# CORE INFERENCE DEPENDENCIES
+# ============================================================================
+# Minimal transformers setup
+transformers>=4.41.0,<5.0.0
+accelerate>=0.30.0,<1.0.0
+safetensors>=0.4.0,<1.0.0
+huggingface-hub>=0.23.0,<1.0.0
+tokenizers>=0.19.0,<1.0.0
+
+# ============================================================================
+# TORCH WITH OPTIMAL SETUP
+# ============================================================================
+# CPU-only inference (lightweight)
+# torch>=2.3.0,<3.0.0 --index-url https://download.pytorch.org/whl/cpu
+
+# GPU inference (choose CUDA version as needed)
+torch>=2.3.0,<3.0.0
+
+# ============================================================================
+# QUANTIZATION (OPTIONAL - For Memory Efficiency)
+# ============================================================================
+# AutoGPTQ for GPTQ quantized models (GPU)
+# auto-gptq>=0.7.0,<1.0.0
+
+# BitsAndBytes for 4-bit/8-bit (GPU)
+# bitsandbytes>=0.43.0,<1.0.0
+
+# llama-cpp-python for GGUF/GGML (CPU/GPU hybrid)
+# llama-cpp-python>=0.2.0,<1.0.0
+
+# ============================================================================
+# OPTIMIZED INFERENCE ENGINES (OPTIONAL)
+# ============================================================================
+# vLLM - High-throughput GPU inference (recommended for production)
+# vllm>=0.5.0,<1.0.0
+
+# Text Generation Inference (TGI)
+# text-generation-inference>=2.0.0,<3.0.0
+
+# ============================================================================
+# API SERVER DEPENDENCIES
+# ============================================================================
+# For serving the model as an API
+fastapi>=0.111.0,<1.0.0
+uvicorn>=0.30.0,<1.0.0
+pydantic>=2.7.0,<3.0.0
+python-multipart>=0.0.9,<1.0.0
+orjson>=3.10.0,<4.0.0
+jsonschema>=4.22.0,<5.0.0
+
+# ============================================================================
+# UTILITIES
+# ============================================================================
+numpy>=1.26.0,<2.0.0
+pyyaml>=6.0.0,<7.0.0
+python-dotenv>=1.0.0,<2.0.0
+tqdm>=4.66.0,<5.0.0
+rich>=13.7.0,<14.0.0
+loguru>=0.7.0,<1.0.0
+prometheus-client>=0.20.0,<1.0.0
+
+# ============================================================================
+# MONITORING & LOGGING
+# ============================================================================
+# For production monitoring
+prometheus-client>=0.20.0,<1.0.0
+
+# ============================================================================
+# SECURITY
+# ============================================================================
+cryptography>=42.0.0,<43.0.0
+
+# ============================================================================
+# DEVELOPMENT TOOLS (MINIMAL)
+# ============================================================================
+# Only what's needed for inference
+click>=8.1.0,<9.0.0
+
+# ============================================================================
+# EXCLUDED DEPENDENCIES (To keep inference lightweight)
+# ============================================================================
+# No testing frameworks (pytest, etc.)
+# No linting tools (black, ruff, etc.)
+# No documentation tools (sphinx, mkdocs, etc.)
+# No notebooks (jupyter, ipython, etc.)
+# No heavy data processing (pandas, scipy - use numpy only)
+# No smart contract tools (solc, slither, mythril - not needed for inference)
+
+# ============================================================================
+# VERIFICATION
+# ============================================================================
+# After installation, verify the inference setup
+# !python -c "from transformers import pipeline; print('Inference setup complete')"

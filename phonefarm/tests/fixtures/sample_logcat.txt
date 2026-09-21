@@ -1,0 +1,2 @@
+09-21 12:00:00.000 E/AndroidRuntime: FATAL EXCEPTION: main
+09-21 12:00:01.000 E/ActivityManager: ANR in com.example.app

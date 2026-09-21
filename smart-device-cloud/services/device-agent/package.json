@@ -1,0 +1,28 @@
+{
+  "name": "@smartcloud/device-agent",
+  "version": "1.0.0",
+  "description": "Smart Device Cloud Device Agent Protocol Types",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest",
+    "lint": "eslint src --ext .ts",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@smart-device-cloud/shared": "file:../",
+    "uuid": "^14.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.2",
+    "@types/uuid": "^11.0.0",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.0",
+    "eslint": "^10.10.0",
+    "@typescript-eslint/eslint-plugin": "^8.18.0",
+    "@typescript-eslint/parser": "^8.18.0"
+  }
+}

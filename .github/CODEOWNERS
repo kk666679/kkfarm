@@ -1,0 +1,50 @@
+# CODEOWNERS - Define owners for different parts of the repository
+
+# Default owners (will be requested for all PRs)
+* @farms-dev/core-team
+
+# Frontend applications
+/apps/web/ @farms-dev/frontend-team
+/mobile/ @farms-dev/mobile-team
+
+# Backend applications
+/apps/api/ @farms-dev/backend-team
+
+# Shared packages
+/packages/shared/ @farms-dev/core-team
+/packages/models/ @farms-dev/core-team
+/packages/device-protocol/ @farms-dev/backend-team
+
+# Infrastructure & DevOps
+/infrastructure/ @farms-dev/devops-team
+/docker-compose*.yml @farms-dev/devops-team
+/nginx/ @farms-dev/devops-team
+/grafana/ @farms-dev/devops-team
+
+# Documentation
+/docs/ @farms-dev/docs-team
+*.md @farms-dev/docs-team
+README.md @farms-dev/docs-team
+
+# GitHub workflows
+/.github/ @farms-dev/devops-team
+/.github/workflows/ @farms-dev/devops-team
+
+# Configuration files
+/*.json @farms-dev/core-team
+/*.yaml @farms-dev/devops-team
+/*.yml @farms-dev/devops-team
+
+# Security
+/SECURITY.md @farms-dev/security-team
+
+# Root files
+/package.json @farms-dev/core-team
+/tsconfig.json @farms-dev/core-team
+/.eslintrc.* @farms-dev/core-team
+/.prettierrc @farms-dev/core-team
+/.editorconfig @farms-dev/core-team
+
+# Legacy files
+/PhoneFarmTemp/ @farms-dev/core-team
+/models/ @farms-dev/core-team

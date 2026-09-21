@@ -1,0 +1,20 @@
+{
+  "name": "@smartcloud/sdk",
+  "version": "1.0.0",
+  "description": "Smart Device Cloud partner SDK",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@smart-device-cloud/shared": "file:../../shared"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.2",
+    "typescript": "^6.0.3"
+  }
+}

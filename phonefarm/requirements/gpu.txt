@@ -1,0 +1,115 @@
+# ============================================================================
+# GPU REQUIREMENTS - CUDA & GPU-Specific Dependencies
+# ============================================================================
+# Install with: pip install -r requirements/gpu.txt
+# This file includes GPU-specific dependencies for accelerated inference/training
+
+# ============================================================================
+# PYTORCH WITH CUDA
+# ============================================================================
+# For CUDA 12.1 (recommended)
+--extra-index-url https://download.pytorch.org/whl/cu121
+torch>=2.3.0+cu121,<3.0.0
+torchvision>=0.18.0+cu121,<1.0.0
+torchaudio>=2.3.0+cu121,<3.0.0
+
+# For CUDA 11.8 (older GPUs)
+# --extra-index-url https://download.pytorch.org/whl/cu118
+# torch>=2.3.0+cu118,<3.0.0
+
+# ============================================================================
+# NVIDIA CUDA TOOLS
+# ============================================================================
+# CUDA runtime libraries
+nvidia-cublas-cu12>=12.1.0,<13.0.0
+nvidia-cuda-runtime-cu12>=12.1.0,<13.0.0
+nvidia-cudnn-cu12>=9.1.0,<10.0.0
+nvidia-nccl-cu12>=2.20.0,<3.0.0
+
+# ============================================================================
+# DEEP LEARNING ACCELERATION
+# ============================================================================
+# Flash Attention (requires CUDA 11.8+)
+flash-attn>=2.6.0,<3.0.0
+
+# xFormers (memory-efficient attention)
+xformers>=0.0.27,<0.1.0
+
+# Triton (GPU kernel compiler)
+triton>=3.0.0,<4.0.0
+
+# ============================================================================
+# QUANTIZATION TOOLS
+# ============================================================================
+# BitsAndBytes for QLoRA
+bitsandbytes>=0.43.0,<1.0.0
+
+# AutoGPTQ for GPTQ quantization
+auto-gptq>=0.7.0,<1.0.0
+
+# AWQ quantization
+awq>=0.2.0,<1.0.0
+
+# GGML/GGUF (CPU/GPU hybrid)
+llama-cpp-python>=0.2.0,<1.0.0
+
+# ============================================================================
+# DISTRIBUTED TRAINING
+# ============================================================================
+# DeepSpeed for distributed training
+deepspeed>=0.14.0,<1.0.0
+
+# NCCL communication
+nccl>=2.20.0,<3.0.0
+
+# ============================================================================
+# GPU MONITORING
+# ============================================================================
+pynvml>=11.5.0,<12.0.0
+gpustat>=1.1.0,<2.0.0
+
+# ============================================================================
+# PROFILING
+# ============================================================================
+# NVIDIA Nsight Systems
+nvidia-nsight-systems>=2024.0.0,<2025.0.0
+
+# PyTorch Profiler
+torch-tb-profiler>=0.4.0,<1.0.0
+
+# ============================================================================
+# OPTIMIZED INFERENCE
+# ============================================================================
+# vLLM for high-throughput inference
+vllm>=0.5.0,<1.0.0
+
+# Text Generation Inference (TGI)
+text-generation-inference>=2.0.0,<3.0.0
+
+# ============================================================================
+# CUDA-SPECIFIC UTILITIES
+# ============================================================================
+# CUDA Python bindings
+cuda-python>=12.1.0,<13.0.0
+
+# ============================================================================
+# PERFORMANCE TUNING
+# ============================================================================
+# For mixed precision training
+apex>=0.1.0,<1.0.0  # Requires manual compilation
+
+# ============================================================================
+# ADDITIONAL GPU LIBRARIES
+# ============================================================================
+# FAISS for GPU acceleration
+faiss-gpu>=1.8.0,<2.0.0
+
+# RAPIDS for data processing (optional)
+# cuml>=24.4.0,<25.0.0
+# cudf>=24.4.0,<25.0.0
+
+# ============================================================================
+# VERIFICATION
+# ============================================================================
+# Ensure CUDA is available
+# !python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}'); print(f'CUDA version: {torch.version.cuda}')"

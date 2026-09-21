@@ -1,0 +1,1526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#05060a">
+<title>KK Farm — Cloud Phone Farming Infrastructure</title>
+<meta name="description" content="Spin up ARM-native cloud phones in seconds. Automate apps at scale with a single API. No physical devices required.">
+<link rel="icon" href="/kkfarm.svg" type="image/svg+xml" />
+<link rel="alternate icon" href="/favicon.ico" sizes="any" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   RESET & TOKENS
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#05060a;
+  --text:#e9edf6;
+  --muted:#8a93a8;
+  --dim:#5d6579;
+  --border:rgba(255,255,255,.08);
+  --border-2:rgba(255,255,255,.14);
+  --surface:rgba(255,255,255,.028);
+  --surface-2:rgba(255,255,255,.05);
+  --cyan:#00e5c0;
+  --violet:#7c5cff;
+  --pink:#ff4d9d;
+  --grad:linear-gradient(120deg,#00e5c0 0%,#5cc8ff 45%,#7c5cff 100%);
+  --radius:16px;
+  --maxw:1180px;
+  --nav-h:64px;
+  --gutter:clamp(16px,4vw,24px);
+}
+html{
+  scroll-behavior:smooth;
+  -webkit-text-size-adjust:100%;
+  scroll-padding-top:calc(var(--nav-h) + 12px);
+}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Inter',system-ui,-apple-system,sans-serif;
+  font-size:16px;
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+  position:relative;
+  min-height:100vh;
+  min-height:100dvh;
+}
+body.no-scroll{overflow:hidden}
+
+/* grid overlay */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+  background-size:56px 56px;
+  -webkit-mask-image:radial-gradient(ellipse 90% 55% at 50% 0%,#000 25%,transparent 72%);
+  mask-image:radial-gradient(ellipse 90% 55% at 50% 0%,#000 25%,transparent 72%);
+}
+@media (min-width:768px){
+  body::before{background-size:68px 68px}
+}
+img,svg{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+input,textarea{font:inherit;color:inherit}
+
+::selection{background:rgba(0,229,192,.28);color:#fff}
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+.wrap{
+  width:100%;
+  max-width:var(--maxw);
+  margin:0 auto;
+  padding:0 var(--gutter);
+  position:relative;
+  z-index:2;
+}
+section{position:relative;z-index:2}
+.sec{padding:clamp(56px,9vw,128px) 0}
+
+/* ============================================================
+   TYPOGRAPHY (fluid)
+   ============================================================ */
+h1,h2,h3,h4{
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:600;
+  line-height:1.12;
+  letter-spacing:-.025em;
+}
+h1{font-size:clamp(2rem,7vw,4.1rem);letter-spacing:-.035em;line-height:1.05}
+h2{font-size:clamp(1.6rem,4.8vw,2.9rem);letter-spacing:-.03em}
+h3{font-size:clamp(1rem,2.4vw,1.15rem);letter-spacing:-.015em}
+p{color:var(--muted)}
+.lead{font-size:clamp(.95rem,2.2vw,1.15rem);color:var(--muted);max-width:56ch}
+
+.eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:clamp(.68rem,1.7vw,.78rem);
+  font-weight:500;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--cyan);margin-bottom:14px;
+}
+.eyebrow::before{content:'';width:22px;height:1px;background:linear-gradient(90deg,transparent,var(--cyan))}
+
+.sec-head{max-width:660px;margin-bottom:clamp(32px,5vw,64px)}
+.sec-head p{margin-top:14px;font-size:clamp(.92rem,2.1vw,1.02rem)}
+.sec-head.center{margin-left:auto;margin-right:auto;text-align:center}
+.sec-head.center .eyebrow::before{display:none}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  padding:13px 22px;border-radius:11px;
+  font-size:clamp(.86rem,2.1vw,.94rem);font-weight:600;
+  font-family:'Space Grotesk',sans-serif;letter-spacing:-.01em;
+  transition:transform .18s cubic-bezier(.34,1.4,.64,1),box-shadow .25s,background .25s,border-color .25s;
+  white-space:nowrap;min-height:44px;
+}
+.btn-primary{
+  background:var(--grad);color:#04070c;
+  box-shadow:0 6px 26px -8px rgba(0,229,192,.55),0 0 0 1px rgba(255,255,255,.08) inset;
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 14px 40px -10px rgba(0,229,192,.7)}
+.btn-primary:active{transform:translateY(0)}
+.btn-ghost{
+  background:var(--surface);border:1px solid var(--border-2);color:var(--text);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+}
+.btn-ghost:hover{background:var(--surface-2);border-color:rgba(255,255,255,.28);transform:translateY(-2px)}
+.btn-ghost:active{transform:translateY(0)}
+.btn-sm{padding:10px 16px;font-size:.85rem;border-radius:9px;min-height:40px}
+
+/* ============================================================
+   NAV
+   ============================================================ */
+header{
+  position:sticky;top:0;z-index:100;
+  transition:background .3s,border-color .3s,backdrop-filter .3s;
+  border-bottom:1px solid transparent;
+}
+header.scrolled{
+  background:rgba(5,6,10,.82);
+  backdrop-filter:blur(18px) saturate(180%);
+  -webkit-backdrop-filter:blur(18px) saturate(180%);
+  border-bottom-color:var(--border);
+}
+nav{
+  display:flex;align-items:center;justify-content:space-between;
+  height:var(--nav-h);
+  gap:16px;
+}
+.logo{
+  display:flex;align-items:center;gap:10px;
+  font-family:'Space Grotesk';font-weight:700;
+  font-size:clamp(.98rem,2.4vw,1.06rem);letter-spacing:-.03em;
+  flex-shrink:0;
+}
+.logo-mark{
+  width:28px;height:28px;border-radius:8px;background:var(--grad);
+  display:grid;place-items:center;flex-shrink:0;
+  box-shadow:0 0 20px -4px rgba(0,229,192,.6);
+}
+.logo-mark svg{width:15px;height:15px}
+
+.nav-links{display:none;align-items:center;gap:clamp(20px,2.5vw,34px)}
+.nav-links a{
+  font-size:.9rem;color:var(--muted);font-weight:500;position:relative;
+  transition:color .2s;
+}
+.nav-links a:hover{color:var(--text)}
+.nav-links a::after{
+  content:'';position:absolute;left:0;bottom:-6px;width:0;height:1px;
+  background:var(--grad);transition:width .25s;
+}
+.nav-links a:hover::after{width:100%}
+
+.nav-right{display:flex;align-items:center;gap:12px}
+.nav-right .signin{display:none;font-size:.9rem;color:var(--muted);font-weight:500;transition:color .2s}
+.nav-right .signin:hover{color:var(--text)}
+
+/* hamburger */
+.burger{
+  display:flex;flex-direction:column;justify-content:center;gap:5px;
+  width:44px;height:44px;padding:0;border-radius:10px;
+  border:1px solid var(--border-2);background:var(--surface);
+  flex-shrink:0;
+  transition:background .25s,border-color .25s;
+}
+.burger:active{background:var(--surface-2)}
+.burger span{
+  display:block;width:18px;height:2px;background:var(--text);
+  margin:0 auto;border-radius:2px;
+  transition:transform .3s,opacity .3s;
+}
+.burger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.burger.open span:nth-child(2){opacity:0}
+.burger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+
+/* mobile drawer */
+.drawer{
+  position:fixed;inset:var(--nav-h) 0 0 0;z-index:99;
+  background:rgba(5,6,10,.97);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  padding:24px var(--gutter) 40px;
+  display:flex;flex-direction:column;gap:6px;
+  transform:translateY(-8px);opacity:0;pointer-events:none;
+  transition:opacity .28s,transform .28s;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+.drawer.open{opacity:1;transform:translateY(0);pointer-events:auto}
+.drawer a{
+  padding:15px 4px;font-size:1.05rem;font-weight:500;
+  font-family:'Space Grotesk';letter-spacing:-.01em;
+  color:var(--text);border-bottom:1px solid var(--border);
+  transition:color .2s,padding-left .2s;
+}
+.drawer a:active{color:var(--cyan);padding-left:8px}
+.drawer .drawer-cta{
+  margin-top:22px;display:flex;flex-direction:column;gap:12px;
+}
+.drawer .drawer-cta .btn{width:100%}
+
+/* ============================================================
+   HERO
+   ============================================================ */
+.hero{
+  padding:clamp(40px,7vw,104px) 0 clamp(48px,7vw,110px);
+  position:relative;overflow:hidden;
+}
+.hero-glow{
+  position:absolute;pointer-events:none;z-index:1;
+  width:min(700px,120vw);height:min(700px,120vw);border-radius:50%;
+  background:radial-gradient(circle,rgba(0,229,192,.16) 0%,rgba(124,92,255,.09) 38%,transparent 68%);
+  top:-40%;right:-40%;filter:blur(30px);
+}
+.hero-glow.b{
+  width:min(560px,100vw);height:min(560px,100vw);
+  top:10%;left:-50%;
+  background:radial-gradient(circle,rgba(124,92,255,.14) 0%,transparent 65%);
+}
+.hero-grid{
+  display:grid;grid-template-columns:1fr;
+  gap:clamp(44px,7vw,72px);
+  align-items:center;
+}
+.badge{
+  display:inline-flex;align-items:center;gap:9px;
+  padding:6px 14px 6px 7px;border-radius:100px;
+  background:rgba(0,229,192,.07);border:1px solid rgba(0,229,192,.22);
+  font-size:clamp(.72rem,1.9vw,.8rem);
+  color:#a9f5e6;font-weight:500;margin-bottom:22px;
+}
+.badge .dot{
+  width:7px;height:7px;border-radius:50%;background:var(--cyan);
+  box-shadow:0 0 0 0 rgba(0,229,192,.7);animation:pulse 2.2s infinite;
+  flex-shrink:0;
+}
+@keyframes pulse{
+  0%{box-shadow:0 0 0 0 rgba(0,229,192,.6)}
+  70%{box-shadow:0 0 0 9px rgba(0,229,192,0)}
+  100%{box-shadow:0 0 0 0 rgba(0,229,192,0)}
+}
+.hero h1{margin-bottom:20px}
+.hero .lead{margin-bottom:30px}
+.hero-cta{
+  display:flex;gap:12px;flex-wrap:wrap;margin-bottom:30px;
+}
+.hero-cta .btn{flex:1 1 auto;min-width:0}
+.hero-meta{
+  display:flex;align-items:center;gap:10px;
+  font-size:clamp(.76rem,1.9vw,.83rem);color:var(--dim);
+  flex-wrap:wrap;
+}
+.avatars{display:flex}
+.avatars span{
+  width:26px;height:26px;border-radius:50%;border:2px solid var(--bg);
+  margin-left:-9px;background:var(--grad);
+}
+.avatars span:first-child{margin-left:0}
+.avatars span:nth-child(2){background:linear-gradient(120deg,#5cc8ff,#7c5cff)}
+.avatars span:nth-child(3){background:linear-gradient(120deg,#ff4d9d,#7c5cff)}
+.avatars span:nth-child(4){background:linear-gradient(120deg,#00e5c0,#5cc8ff)}
+
+/* fleet panel */
+.fleet-panel{
+  position:relative;
+  border-radius:20px;
+  background:linear-gradient(160deg,rgba(255,255,255,.055),rgba(255,255,255,.012));
+  border:1px solid var(--border);
+  padding:clamp(14px,3.5vw,20px);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  box-shadow:0 40px 90px -40px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.02) inset;
+}
+.fleet-top{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border);
+  flex-wrap:wrap;
+}
+.fleet-title{
+  display:flex;align-items:center;gap:8px;
+  font-size:clamp(.66rem,1.8vw,.8rem);font-weight:600;
+  letter-spacing:.05em;text-transform:uppercase;color:var(--muted);
+}
+.fleet-title .live{
+  width:6px;height:6px;border-radius:50%;background:var(--cyan);
+  animation:pulse 2s infinite;flex-shrink:0;
+}
+.fleet-count{
+  font-family:'Space Grotesk';font-size:clamp(.72rem,1.9vw,.82rem);font-weight:600;
+  color:var(--cyan);letter-spacing:.02em;
+}
+.fleet{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(7px,1.6vw,11px);
+}
+.dev{
+  position:relative;aspect-ratio:9/16;border-radius:10px;
+  background:linear-gradient(170deg,rgba(255,255,255,.06),rgba(255,255,255,.015));
+  border:1px solid rgba(255,255,255,.09);
+  padding:clamp(6px,1.4vw,9px) clamp(5px,1.2vw,7px);
+  overflow:hidden;
+  animation:boot 5s ease-in-out infinite;
+  animation-delay:var(--d,0s);
+}
+@keyframes boot{
+  0%,72%,100%{border-color:rgba(255,255,255,.09);box-shadow:none}
+  80%{border-color:rgba(0,229,192,.55);box-shadow:0 0 16px -3px rgba(0,229,192,.55)}
+}
+.dev::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(180deg,transparent 40%,rgba(0,229,192,.09) 50%,transparent 60%);
+  transform:translateY(-120%);
+  animation:scan 5s ease-in-out infinite;
+  animation-delay:var(--d,0s);
+}
+@keyframes scan{
+  0%,74%{transform:translateY(-120%)}
+  92%,100%{transform:translateY(120%)}
+}
+.dev-bar{height:4px;border-radius:3px;background:rgba(255,255,255,.14);margin-bottom:5px;width:65%}
+.dev-line{height:3px;border-radius:3px;background:rgba(255,255,255,.08);margin-bottom:4px}
+.dev-line.s{width:55%}
+.dev-block{
+  height:34%;border-radius:5px;margin-top:6px;
+  background:linear-gradient(135deg,rgba(0,229,192,.22),rgba(124,92,255,.2));
+  border:1px solid rgba(255,255,255,.06);
+}
+
+/* status chips */
+.status-chip{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;border-radius:12px;
+  background:rgba(11,14,21,.92);
+  border:1px solid var(--border-2);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+  box-shadow:0 22px 50px -18px rgba(0,0,0,.95);
+}
+.status-chip .ico{
+  width:30px;height:30px;border-radius:8px;display:grid;place-items:center;flex-shrink:0;
+  background:rgba(0,229,192,.12);border:1px solid rgba(0,229,192,.25);
+}
+.status-chip .ico svg{width:14px;height:14px;stroke:var(--cyan)}
+.status-chip b{
+  display:block;font-family:'Space Grotesk';font-size:.88rem;font-weight:600;letter-spacing:-.01em;
+  line-height:1.2;
+}
+.status-chip small{font-size:.66rem;color:var(--dim);letter-spacing:.04em}
+.status-chip.two .ico{background:rgba(124,92,255,.14);border-color:rgba(124,92,255,.3)}
+.status-chip.two .ico svg{stroke:#a894ff}
+
+/* chips only absolute on larger screens */
+@media (min-width:640px){
+  .status-chip{
+    position:absolute;bottom:-18px;left:-18px;
+    animation:float 6s ease-in-out infinite;
+  }
+  .status-chip.two{bottom:auto;top:-20px;left:auto;right:-14px;animation-delay:-3s}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+}
+@media (max-width:639px){
+  .status-chip{margin-top:12px;width:100%}
+  .status-chip.two{margin-top:8px}
+}
+
+/* ============================================================
+   TRUST / MARQUEE
+   ============================================================ */
+.trust{
+  padding:8px 0 0;
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  background:rgba(255,255,255,.012);
+}
+.trust-label{
+  text-align:center;
+  font-size:clamp(.66rem,1.7vw,.74rem);
+  letter-spacing:.16em;text-transform:uppercase;
+  color:var(--dim);padding:18px 0 10px;font-weight:500;
+}
+.marquee{
+  overflow:hidden;padding:6px 0 22px;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);
+  mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);
+}
+.marquee-track{display:flex;gap:clamp(36px,6vw,60px);width:max-content;animation:scroll 32s linear infinite}
+@keyframes scroll{to{transform:translateX(-50%)}}
+.marquee-track span{
+  font-family:'Space Grotesk';
+  font-size:clamp(.9rem,2.2vw,1.05rem);
+  font-weight:600;letter-spacing:-.02em;
+  color:rgba(255,255,255,.26);white-space:nowrap;transition:color .3s;
+}
+.marquee-track span:hover{color:rgba(255,255,255,.6)}
+
+/* ============================================================
+   BENTO FEATURES
+   ============================================================ */
+.bento{display:grid;grid-template-columns:1fr;gap:16px}
+.card{
+  position:relative;border-radius:var(--radius);
+  background:linear-gradient(160deg,rgba(255,255,255,.045),rgba(255,255,255,.012));
+  border:1px solid var(--border);
+  padding:clamp(22px,4vw,28px);overflow:hidden;
+  transition:border-color .3s,transform .35s cubic-bezier(.2,.8,.3,1),background .3s;
+}
+.card:hover{
+  border-color:var(--border-2);
+  transform:translateY(-4px);
+  background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.02));
+}
+.card::before{
+  content:'';position:absolute;top:0;left:22px;right:22px;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,229,192,.5),transparent);
+  opacity:0;transition:opacity .35s;
+}
+.card:hover::before{opacity:1}
+.card h3{margin-bottom:9px}
+.card p{font-size:clamp(.88rem,2.05vw,.92rem);line-height:1.62}
+.card-icon{
+  width:40px;height:40px;border-radius:11px;display:grid;place-items:center;margin-bottom:18px;
+  background:rgba(0,229,192,.09);border:1px solid rgba(0,229,192,.2);
+}
+.card-icon svg{width:18px;height:18px;stroke:var(--cyan);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.card-icon.v{background:rgba(124,92,255,.1);border-color:rgba(124,92,255,.24)}
+.card-icon.v svg{stroke:#a894ff}
+.card-icon.p{background:rgba(255,77,157,.09);border-color:rgba(255,77,157,.22)}
+.card-icon.p svg{stroke:#ff7cb8}
+
+/* code block */
+.code{
+  margin-top:20px;border-radius:11px;overflow:hidden;
+  background:rgba(0,0,0,.42);border:1px solid rgba(255,255,255,.07);
+}
+.code-bar{
+  display:flex;gap:6px;padding:9px 13px;border-bottom:1px solid rgba(255,255,255,.06);
+  background:rgba(255,255,255,.02);
+}
+.code-bar i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.13)}
+.code-bar i:nth-child(1){background:rgba(255,95,86,.55)}
+.code-bar i:nth-child(2){background:rgba(255,189,46,.5)}
+.code-bar i:nth-child(3){background:rgba(39,201,63,.5)}
+.code pre{
+  padding:14px;font-family:ui-monospace,'SF Mono',Menlo,monospace;
+  font-size:clamp(.68rem,1.7vw,.775rem);line-height:1.75;
+  overflow-x:auto;color:#8ea0b8;
+  -webkit-overflow-scrolling:touch;
+}
+.code .k{color:#a894ff}
+.code .s{color:#7ee7c7}
+.code .f{color:#5cc8ff}
+.code .c{color:#4d5668}
+.code .n{color:#ffb36b}
+
+/* ============================================================
+   STEPS
+   ============================================================ */
+.steps{display:grid;grid-template-columns:1fr;gap:28px;position:relative}
+.step{position:relative;padding-left:22px}
+.step-num{
+  font-family:'Space Grotesk';font-size:.75rem;font-weight:600;letter-spacing:.1em;
+  color:var(--cyan);margin-bottom:12px;display:flex;align-items:center;gap:12px;
+}
+.step-num::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(0,229,192,.35),transparent)}
+.step h3{font-size:clamp(.98rem,2.4vw,1.06rem);margin-bottom:8px}
+.step p{font-size:clamp(.85rem,2vw,.88rem);line-height:1.6}
+.step::before{
+  content:'';position:absolute;left:0;top:0;bottom:-28px;width:1px;
+  background:linear-gradient(180deg,transparent,var(--border) 15%,var(--border) 85%,transparent);
+}
+.step:last-child::before{bottom:0}
+
+/* ============================================================
+   USE CASES
+   ============================================================ */
+.cases{display:grid;grid-template-columns:1fr;gap:14px}
+.case{
+  display:flex;gap:14px;padding:clamp(18px,3.5vw,22px);border-radius:14px;
+  background:rgba(255,255,255,.022);border:1px solid var(--border);
+  transition:background .3s,border-color .3s,transform .3s;
+}
+.case:hover{background:rgba(255,255,255,.05);border-color:var(--border-2);transform:translateY(-3px)}
+.case .ico{
+  width:36px;height:36px;border-radius:10px;flex-shrink:0;display:grid;place-items:center;
+  background:linear-gradient(140deg,rgba(0,229,192,.16),rgba(124,92,255,.14));
+  border:1px solid rgba(255,255,255,.08);
+}
+.case .ico svg{width:16px;height:16px;stroke:#8ff0dc;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.case h3{font-size:clamp(.92rem,2.2vw,.98rem);margin-bottom:4px}
+.case p{font-size:clamp(.82rem,2vw,.85rem);line-height:1.55}
+
+/* ============================================================
+   METRICS
+   ============================================================ */
+.metrics{
+  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+  background:linear-gradient(180deg,rgba(0,229,192,.03),transparent 60%);
+}
+.metrics-grid{
+  display:grid;grid-template-columns:repeat(2,1fr);
+  gap:clamp(28px,5vw,40px) 16px;
+  padding:clamp(36px,6vw,68px) 0;
+}
+.metric{text-align:center}
+.metric .val{
+  font-family:'Space Grotesk';
+  font-size:clamp(1.6rem,5vw,2.9rem);
+  font-weight:700;letter-spacing:-.04em;line-height:1;margin-bottom:8px;
+  background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.metric .lbl{
+  font-size:clamp(.68rem,1.7vw,.82rem);
+  color:var(--dim);letter-spacing:.05em;
+}
+
+/* ============================================================
+   PRICING
+   ============================================================ */
+.toggle{
+  display:inline-flex;align-items:center;gap:3px;padding:4px;border-radius:11px;
+  background:var(--surface);border:1px solid var(--border);margin-top:22px;
+}
+.toggle button{
+  padding:9px 16px;border-radius:8px;
+  font-size:clamp(.78rem,2vw,.85rem);font-weight:600;
+  color:var(--muted);transition:all .25s;font-family:'Space Grotesk';
+  min-height:40px;
+}
+.toggle button.active{background:var(--grad);color:#04070c}
+.toggle .save{
+  font-size:.68rem;font-weight:600;padding:2px 6px;border-radius:100px;
+  background:rgba(0,229,192,.14);color:var(--cyan);margin-left:3px;
+}
+
+.plans{display:grid;grid-template-columns:1fr;gap:18px;align-items:start}
+.plan{
+  position:relative;border-radius:18px;
+  padding:clamp(26px,4.5vw,32px) clamp(22px,4vw,28px);
+  background:linear-gradient(165deg,rgba(255,255,255,.04),rgba(255,255,255,.01));
+  border:1px solid var(--border);
+  transition:transform .35s cubic-bezier(.2,.8,.3,1),border-color .3s;
+}
+.plan:hover{transform:translateY(-5px);border-color:var(--border-2)}
+.plan.featured{
+  border-color:rgba(0,229,192,.35);
+  background:linear-gradient(165deg,rgba(0,229,192,.07),rgba(124,92,255,.04));
+  box-shadow:0 30px 70px -35px rgba(0,229,192,.5);
+}
+.plan.featured::after{
+  content:'Most popular';position:absolute;top:-11px;left:50%;transform:translateX(-50%);
+  padding:4px 14px;border-radius:100px;
+  font-size:.68rem;font-weight:600;
+  font-family:'Space Grotesk';letter-spacing:.05em;text-transform:uppercase;
+  background:var(--grad);color:#04070c;white-space:nowrap;
+}
+.plan-name{
+  font-family:'Space Grotesk';font-size:.78rem;font-weight:600;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;
+}
+.plan-price{display:flex;align-items:baseline;gap:6px;margin-bottom:6px;flex-wrap:wrap}
+.plan-price .amt{
+  font-family:'Space Grotesk';
+  font-size:clamp(2rem,6vw,2.6rem);
+  font-weight:700;letter-spacing:-.045em;line-height:1;
+}
+.plan-price .per{font-size:.86rem;color:var(--dim)}
+.plan-desc{font-size:clamp(.84rem,2vw,.87rem);color:var(--dim);margin-bottom:22px;min-height:0}
+.plan hr{border:none;border-top:1px solid var(--border);margin:0 0 20px}
+.plan ul{list-style:none;display:flex;flex-direction:column;gap:11px;margin-bottom:26px}
+.plan li{
+  display:flex;gap:10px;
+  font-size:clamp(.84rem,2vw,.89rem);
+  color:var(--muted);line-height:1.5;
+}
+.plan li svg{
+  width:15px;height:15px;flex-shrink:0;margin-top:4px;
+  stroke:var(--cyan);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;
+}
+.plan .btn{width:100%}
+
+/* ============================================================
+   FAQ
+   ============================================================ */
+.faq{max-width:780px;margin:0 auto}
+.faq-item{border-bottom:1px solid var(--border)}
+.faq-q{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:clamp(18px,3.5vw,24px) 0;text-align:left;
+  font-family:'Space Grotesk';
+  font-size:clamp(.92rem,2.3vw,1.02rem);
+  font-weight:600;letter-spacing:-.015em;
+  color:var(--text);transition:color .2s;
+  min-height:56px;
+}
+.faq-q:hover{color:var(--cyan)}
+.faq-q .chev{
+  width:24px;height:24px;flex-shrink:0;border-radius:50%;
+  border:1px solid var(--border-2);display:grid;place-items:center;
+  transition:transform .35s cubic-bezier(.4,0,.2,1),background .3s,border-color .3s;
+}
+.faq-q .chev svg{width:10px;height:10px;stroke:var(--muted);stroke-width:2.4;fill:none;stroke-linecap:round}
+.faq-item.open .faq-q .chev{transform:rotate(45deg);background:rgba(0,229,192,.12);border-color:rgba(0,229,192,.35)}
+.faq-item.open .faq-q .chev svg{stroke:var(--cyan)}
+.faq-a{display:grid;grid-template-rows:0fr;transition:grid-template-rows .38s cubic-bezier(.4,0,.2,1)}
+.faq-item.open .faq-a{grid-template-rows:1fr}
+.faq-a-inner{overflow:hidden}
+.faq-a p{
+  padding-bottom:22px;
+  font-size:clamp(.87rem,2.1vw,.93rem);
+  line-height:1.72;max-width:64ch;
+}
+
+/* ============================================================
+   FINAL CTA
+   ============================================================ */
+.cta-box{
+  position:relative;border-radius:clamp(18px,3vw,26px);overflow:hidden;
+  padding:clamp(36px,6vw,84px) clamp(22px,4.5vw,64px);
+  text-align:center;
+  background:linear-gradient(150deg,rgba(0,229,192,.09),rgba(124,92,255,.08) 55%,rgba(255,77,157,.05));
+  border:1px solid rgba(255,255,255,.1);
+}
+.cta-box::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 60% 100% at 50% 0%,rgba(0,229,192,.16),transparent 70%);
+  pointer-events:none;
+}
+.cta-box h2{margin-bottom:16px;position:relative}
+.cta-box p{max-width:52ch;margin:0 auto 30px;position:relative;font-size:clamp(.9rem,2.1vw,1rem)}
+.cta-actions{
+  display:flex;gap:12px;justify-content:center;flex-wrap:wrap;position:relative;
+}
+.cta-actions .btn{flex:1 1 auto;min-width:0}
+.cta-note{
+  margin-top:20px;
+  font-size:clamp(.72rem,1.8vw,.8rem);
+  color:var(--dim);position:relative;
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+footer{
+  border-top:1px solid var(--border);
+  padding:clamp(48px,7vw,60px) 0 30px;
+  margin-top:clamp(48px,8vw,100px);
+  position:relative;z-index:2;
+}
+.foot-grid{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:clamp(28px,5vw,40px);
+  margin-bottom:clamp(32px,5vw,48px);
+}
+.foot-brand{grid-column:span 2}
+.foot-brand p{
+  font-size:clamp(.84rem,2vw,.87rem);
+  max-width:36ch;margin-top:14px;line-height:1.65;
+}
+.foot-col h4{
+  font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);font-weight:600;margin-bottom:14px;
+}
+.foot-col a{
+  display:block;
+  font-size:clamp(.84rem,2vw,.88rem);
+  color:var(--muted);margin-bottom:10px;
+  transition:color .2s;
+  min-height:28px;
+}
+.foot-col a:hover{color:var(--cyan)}
+.foot-bottom{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:16px;flex-wrap:wrap;
+  padding-top:26px;border-top:1px solid var(--border);
+  font-size:clamp(.74rem,1.9vw,.82rem);
+  color:var(--dim);
+}
+.foot-social{display:flex;gap:10px}
+.foot-social a{
+  width:38px;height:38px;border-radius:9px;display:grid;place-items:center;
+  border:1px solid var(--border);transition:all .25s;
+}
+.foot-social a:hover{border-color:rgba(0,229,192,.4);background:rgba(0,229,192,.07)}
+.foot-social svg{width:15px;height:15px;fill:var(--muted);transition:fill .25s}
+.foot-social a:hover svg{fill:var(--cyan)}
+
+/* ============================================================
+   REVEAL
+   ============================================================ */
+.reveal{
+  opacity:0;transform:translateY(24px);
+  transition:opacity .75s cubic-bezier(.2,.8,.3,1),transform .75s cubic-bezier(.2,.8,.3,1);
+}
+.reveal.in{opacity:1;transform:none}
+
+/* ============================================================
+   RESPONSIVE BREAKPOINTS
+   ============================================================ */
+
+/* ---- Small tablets / large phones (≥ 560px) ---- */
+@media (min-width:560px){
+  .cases{grid-template-columns:repeat(2,1fr)}
+  .metrics-grid{grid-template-columns:repeat(4,1fr);gap:24px}
+  .cta-actions .btn{flex:0 1 auto}
+  .hero-cta .btn{flex:0 1 auto}
+}
+
+/* ---- Tablets (≥ 720px) ---- */
+@media (min-width:720px){
+  :root{--nav-h:68px}
+  .fleet{grid-template-columns:repeat(4,1fr)}
+  .foot-grid{grid-template-columns:1.6fr 1fr 1fr 1fr;gap:36px}
+  .foot-brand{grid-column:auto}
+  .plan-desc{min-height:42px}
+}
+
+/* ---- Small desktops (≥ 900px) ---- */
+@media (min-width:900px){
+  .bento{grid-template-columns:repeat(3,1fr)}
+  .card.span-2{grid-column:span 2}
+  .cases{grid-template-columns:repeat(3,1fr)}
+  .plans{grid-template-columns:repeat(3,1fr)}
+  .steps{grid-template-columns:repeat(4,1fr);gap:0}
+  .step{padding:0 22px}
+  .step:first-child{padding-left:0}
+  .step:last-child{padding-right:0}
+  .step::before{
+    left:0;top:0;bottom:0;
+    background:linear-gradient(180deg,transparent,var(--border) 20%,var(--border) 80%,transparent);
+  }
+  .step:first-child::before{display:none}
+}
+
+/* ---- Desktops (≥ 1000px) ---- */
+@media (min-width:1000px){
+  .nav-links{display:flex}
+  .nav-right .signin{display:inline}
+  .burger{display:none}
+  .drawer{display:none}
+  .hero-grid{grid-template-columns:1.02fr .98fr;gap:clamp(40px,5vw,72px)}
+  .hero-glow{width:900px;height:900px;top:-420px;right:-280px}
+  .hero-glow.b{width:700px;height:700px;top:60px;left:-420px}
+}
+
+/* ---- Very large (≥ 1280px) ---- */
+@media (min-width:1280px){
+  :root{--maxw:1180px}
+}
+
+/* ---- Small phones (≤ 380px) ---- */
+@media (max-width:380px){
+  .fleet{grid-template-columns:repeat(2,1fr)}
+  .toggle button{padding:8px 12px;font-size:.76rem}
+  .toggle .save{display:none}
+  .metrics-grid{grid-template-columns:1fr;gap:26px}
+  .foot-grid{grid-template-columns:1fr}
+  .foot-brand{grid-column:auto}
+  .hero-cta{flex-direction:column}
+  .hero-cta .btn{width:100%}
+  .cta-actions{flex-direction:column}
+  .cta-actions .btn{width:100%}
+}
+
+/* ---- Landscape phones ---- */
+@media (max-height:520px) and (orientation:landscape){
+  .hero{padding-top:24px}
+  .badge{margin-bottom:14px}
+}
+
+/* ---- Reduced motion ---- */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.01ms!important;
+  }
+  html{scroll-behavior:auto}
+  .reveal{opacity:1;transform:none}
+}
+
+/* ---- High contrast / touch tweaks ---- */
+@media (hover:none){
+  .card:hover{transform:none}
+  .plan:hover{transform:none}
+  .case:hover{transform:none}
+  .btn-primary:hover{transform:none}
+  .btn-ghost:hover{transform:none}
+}
+
+/* ---- Print ---- */
+@media print{
+  body{background:#fff;color:#000}
+  body::before{display:none}
+  header,footer,.trust,.hero-glow,.status-chip{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ================= NAV ================= -->
+<header id="header">
+  <div class="wrap">
+    <nav>
+      <a href="#" class="logo" aria-label="KK Farm home">
+        <span class="logo-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#04070c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/>
+          </svg>
+        </span>
+        KK Farm
+      </a>
+
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#how">How it works</a>
+        <a href="#usecases">Use cases</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#faq">FAQ</a>
+      </div>
+
+      <div class="nav-right">
+        <a href="#" class="signin">Sign in</a>
+        <a href="#pricing" class="btn btn-primary btn-sm">Start free</a>
+        <button class="burger" id="burger" aria-label="Open menu" aria-expanded="false" aria-controls="drawer">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<!-- mobile drawer -->
+<div class="drawer" id="drawer" role="dialog" aria-label="Mobile navigation">
+  <a href="#features">Features</a>
+  <a href="#how">How it works</a>
+  <a href="#usecases">Use cases</a>
+  <a href="#pricing">Pricing</a>
+  <a href="#faq">FAQ</a>
+  <div class="drawer-cta">
+    <a href="#" class="btn btn-ghost">Sign in</a>
+    <a href="#pricing" class="btn btn-primary">Start free trial</a>
+  </div>
+</div>
+
+<!-- ================= HERO ================= -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-glow b"></div>
+  <div class="wrap">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <div class="badge reveal">
+          <span class="dot"></span>
+          Now live in 12 edge regions
+        </div>
+        <h1 class="reveal">Run a thousand phones from one screen.</h1>
+        <p class="lead reveal">
+          KK Farm gives you ARM-native cloud phones that boot in seconds. Automate any Android app,
+          scale QA testing, and grow your fleet — without buying, racking, or charging a single physical device.
+        </p>
+        <div class="hero-cta reveal">
+          <a href="#pricing" class="btn btn-primary">
+            Start free trial
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+          <a href="#how" class="btn btn-ghost">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            Watch 2-min demo
+          </a>
+        </div>
+        <div class="hero-meta reveal">
+          <div class="avatars"><span></span><span></span><span></span><span></span></div>
+          <span>Trusted by <strong style="color:#c9d3e4;font-weight:600">2,400+</strong> automation teams</span>
+        </div>
+      </div>
+
+      <div class="reveal">
+        <div class="fleet-panel">
+          <div class="fleet-top">
+            <div class="fleet-title"><span class="live"></span> Fleet · ap-southeast</div>
+            <div class="fleet-count" id="fleetCount">1,284 online</div>
+          </div>
+          <div class="fleet">
+            <div class="dev" style="--d:0s"><div class="dev-bar"></div><div class="dev-line"></div><div class="dev-line s"></div><div class="dev-block"></div></div>
+            <div class="dev" style="--d:.35s"><div class="dev-bar"></div><div class="dev-line"></div><div class="dev-line s"></div><div class="dev-block"></div></div>
+            <div class="dev" style="--d:.7s"><div class="dev-bar"></div><div class="dev-line"></div><div class="dev-line s"></div><div class="dev-block"></div></div>
+            <div class="dev" style="--d:1.05s"><div class="dev-bar"></div><div class="dev-line"></div><div class="dev-line s"></div><div class="dev-block"></div></div>
+            <div class="dev" style="--d:1.4s"><div class="dev-bar"></div><div class="dev-line"></div><div class="dev-line s"></div><div class="dev-block"></div></div>
+            <div class="dev" style="--d:1.75s"><div class="dev-bar"></div><div class="dev-line"></div><div class="dev-line s"></div><div class="dev-block"></div></div>
+            <div class="dev" style="--d:2.1s"><div class="dev-bar"></div><div class="dev-line"></div><div class="dev-line s"></div><div class="dev-block"></div></div>
+            <div class="dev" style="--d:2.45s"><div class="dev-bar"></div><div class="dev-line"></div><div class="dev-line s"></div><div class="dev-block"></div></div>
+            <div class="dev" style="--d:2.8s"><div class="dev-bar"></div><div class="dev-line"></div><div class="dev-line s"></div><div class="dev-block"></div></div>
+            <div class="dev" style="--d:3.15s"><div class="dev-bar"></div><div class="dev-line"></div><div class="dev-line s"></div><div class="dev-block"></div></div>
+            <div class="dev" style="--d:3.5s"><div class="dev-bar"></div><div class="dev-line"></div><div class="dev-line s"></div><div class="dev-block"></div></div>
+            <div class="dev" style="--d:3.85s"><div class="dev-bar"></div><div class="dev-line"></div><div class="dev-line s"></div><div class="dev-block"></div></div>
+          </div>
+
+          <div class="status-chip">
+            <span class="ico">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h8l-1 8 10-12h-8l1-8z"/></svg>
+            </span>
+            <div><b>7.8s</b><small>AVG BOOT TIME</small></div>
+          </div>
+
+          <div class="status-chip two">
+            <span class="ico">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </span>
+            <div><b>Isolated</b><small>DEVICE FINGERPRINTS</small></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TRUST ================= -->
+<div class="trust">
+  <div class="trust-label">Powering automation at</div>
+  <div class="marquee">
+    <div class="marquee-track">
+      <span>APPTESTIFY</span><span>NOVA LABS</span><span>ORBIT QA</span><span>PIXELFORGE</span>
+      <span>HYPERION</span><span>SOUTHBOUND</span><span>VERTEX MOBILE</span><span>BLUEPEAK</span>
+      <span>APPTESTIFY</span><span>NOVA LABS</span><span>ORBIT QA</span><span>PIXELFORGE</span>
+      <span>HYPERION</span><span>SOUTHBOUND</span><span>VERTEX MOBILE</span><span>BLUEPEAK</span>
+    </div>
+  </div>
+</div>
+
+<!-- ================= FEATURES ================= -->
+<section class="sec" id="features">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">Platform</div>
+      <h2>Real ARM hardware.<br>Zero physical phones.</h2>
+      <p>Every instance runs on genuine ARM silicon with its own isolated Android environment — so your apps behave exactly as they would on a real device in a real hand.</p>
+    </div>
+
+    <div class="bento">
+      <div class="card span-2 reveal">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg>
+        </div>
+        <h3>One API. Infinite phones.</h3>
+        <p>Provision, control, and tear down entire fleets with a few lines of code. REST, WebSocket, and raw ADB — whatever your stack already speaks.</p>
+        <div class="code">
+          <div class="code-bar"><i></i><i></i><i></i></div>
+          <pre><span class="c">// spin up 250 isolated devices in ~8s</span>
+<span class="k">const</span> fleet = <span class="k">await</span> nimbus.<span class="f">devices.create</span>({
+  profile: <span class="s">"pixel-8-arm"</span>,
+  count:   <span class="n">250</span>,
+  region:  <span class="s">"ap-southeast"</span>,
+  proxy:   <span class="s">"residential-my"</span>
+});
+
+<span class="k">await</span> fleet.<span class="f">run</span>(<span class="s">"openApp"</span>, { id: <span class="s">"com.shop.app"</span> });
+<span class="c">// → 250 devices ready ✓</span></pre>
+        </div>
+      </div>
+
+      <div class="card reveal">
+        <div class="card-icon v">
+          <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+        </div>
+        <h3>Fingerprint isolation</h3>
+        <p>Every device ships with a unique IMEI, MAC, Android ID, GAID, build props, and sensor set. No shared DNA between instances — ever.</p>
+      </div>
+
+      <div class="card reveal">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg>
+        </div>
+        <h3>60fps live streaming</h3>
+        <p>Watch and interact with any device in your browser at 60fps over H.264. Take manual control in one click, then hand it back to the script.</p>
+      </div>
+
+      <div class="card reveal">
+        <div class="card-icon p">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        </div>
+        <h3>12 global regions</h3>
+        <p>Deploy close to your users. Sub-40ms latency from North America, Europe, Southeast Asia, and Latin America.</p>
+      </div>
+
+      <div class="card reveal">
+        <div class="card-icon v">
+          <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="19" cy="18" r="2.5"/></svg>
+        </div>
+        <h3>Proxy &amp; carrier routing</h3>
+        <p>Attach a dedicated residential or mobile proxy to each device. Per-instance IP rotation, carrier selection, and traffic rules built in.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= HOW IT WORKS ================= -->
+<section class="sec" id="how" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">Workflow</div>
+      <h2>From zero to fleet in four steps.</h2>
+    </div>
+
+    <div class="steps">
+      <div class="step reveal">
+        <div class="step-num">STEP 01</div>
+        <h3>Pick a device profile</h3>
+        <p>Choose from 40+ real Android profiles — Pixel, Samsung, Xiaomi, and more — each with matching hardware specs and build props.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">STEP 02</div>
+        <h3>Deploy your fleet</h3>
+        <p>Set a count, pick a region, attach proxies. Your devices boot in under 10 seconds and appear on your dashboard instantly.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">STEP 03</div>
+        <h3>Automate anything</h3>
+        <p>Upload an APK, push a script, or drive devices through our API. Run the same action across thousands of phones with one call.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">STEP 04</div>
+        <h3>Scale up or down</h3>
+        <p>Add 500 devices for a launch week, then drop back to 20. Billing is per-minute — you only pay for what's actually running.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= USE CASES ================= -->
+<section class="sec" id="usecases" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">Use cases</div>
+      <h2>Built for teams who need many phones.</h2>
+      <p>If your workflow needs more than a handful of Android devices, it belongs on NimbusFarm.</p>
+    </div>
+
+    <div class="cases">
+      <div class="case reveal">
+        <span class="ico"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+        <div>
+          <h3>App testing &amp; QA</h3>
+          <p>Run your regression suite across 200 device profiles in parallel. Ship with confidence, not with a drawer full of old phones.</p>
+        </div>
+      </div>
+      <div class="case reveal">
+        <span class="ico"><svg viewBox="0 0 24 24"><path d="M4 4h16v12H4z"/><path d="M2 20h20"/><path d="M9 8h6"/></svg></span>
+        <div>
+          <h3>Ad verification</h3>
+          <p>Confirm creatives render correctly, track install attribution, and catch fraudulent placements across regions and carriers.</p>
+        </div>
+      </div>
+      <div class="case reveal">
+        <span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+        <div>
+          <h3>Social media ops</h3>
+          <p>Manage dozens of accounts from clean, isolated devices with dedicated IPs. Schedule, post, and monitor at scale.</p>
+        </div>
+      </div>
+      <div class="case reveal">
+        <span class="ico"><svg viewBox="0 0 24 24"><path d="M6 12h4M14 12h4M12 6v4M12 14v4"/><rect x="3" y="3" width="18" height="18" rx="3"/></svg></span>
+        <div>
+          <h3>Game automation</h3>
+          <p>Farm resources, run bot accounts, and stress-test multiplayer backends with hundreds of concurrent real clients.</p>
+        </div>
+      </div>
+      <div class="case reveal">
+        <span class="ico"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg></span>
+        <div>
+          <h3>Data collection</h3>
+          <p>Gather app-store rankings, pricing, and content from real devices in real geographies — no emulator detection risk.</p>
+        </div>
+      </div>
+      <div class="case reveal">
+        <span class="ico"><svg viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg></span>
+        <div>
+          <h3>Growth &amp; marketing</h3>
+          <p>Test onboarding funnels, run referral flows, and validate campaign landing pages on the exact devices your users own.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= METRICS ================= -->
+<section class="metrics">
+  <div class="wrap">
+    <div class="metrics-grid">
+      <div class="metric reveal">
+        <div class="val" data-count="99.98" data-suffix="%" data-decimals="2">0%</div>
+        <div class="lbl">UPTIME SLA</div>
+      </div>
+      <div class="metric reveal">
+        <div class="val" data-count="7.8" data-suffix="s" data-decimals="1">0s</div>
+        <div class="lbl">AVERAGE BOOT TIME</div>
+      </div>
+      <div class="metric reveal">
+        <div class="val" data-count="12" data-suffix="">0</div>
+        <div class="lbl">EDGE REGIONS</div>
+      </div>
+      <div class="metric reveal">
+        <div class="val" data-count="340" data-suffix="K+">0</div>
+        <div class="lbl">DEVICES DEPLOYED</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PRICING ================= -->
+<section class="sec" id="pricing">
+  <div class="wrap">
+    <div class="sec-head center reveal">
+      <div class="eyebrow">Pricing</div>
+      <h2>Pay per device. Per minute.</h2>
+      <p>No hardware, no contracts, no idle costs. Scale your fleet up for a launch and back down the same day.</p>
+      <div class="toggle" id="billingToggle">
+        <button class="active" data-cycle="monthly">Monthly</button>
+        <button data-cycle="annual">Annual <span class="save">−20%</span></button>
+      </div>
+    </div>
+
+    <div class="plans">
+      <div class="plan reveal">
+        <div class="plan-name">Starter</div>
+        <div class="plan-price">
+          <span class="amt" data-monthly="$49" data-annual="$39">$49</span>
+          <span class="per">/ month</span>
+        </div>
+        <p class="plan-desc">For solo developers and small automation projects.</p>
+        <hr>
+        <ul>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> Up to 10 concurrent devices</li>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> 2 device profiles</li>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> REST API + ADB access</li>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> 720p screen streaming</li>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> Community support</li>
+        </ul>
+        <a href="#" class="btn btn-ghost">Start free trial</a>
+      </div>
+
+      <div class="plan featured reveal">
+        <div class="plan-name">Growth</div>
+        <div class="plan-price">
+          <span class="amt" data-monthly="$199" data-annual="$159">$199</span>
+          <span class="per">/ month</span>
+        </div>
+        <p class="plan-desc">For teams running production automation at scale.</p>
+        <hr>
+        <ul>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> Up to 100 concurrent devices</li>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> All 40+ device profiles</li>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> Per-device proxy routing</li>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> 60fps streaming + batch control</li>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> Team roles &amp; audit logs</li>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> Priority support, 4h response</li>
+        </ul>
+        <a href="#" class="btn btn-primary">Start free trial</a>
+      </div>
+
+      <div class="plan reveal">
+        <div class="plan-name">Scale</div>
+        <div class="plan-price">
+          <span class="amt" data-monthly="Custom" data-annual="Custom" style="font-size:clamp(1.6rem,4.6vw,2rem)">Custom</span>
+        </div>
+        <p class="plan-desc">For enterprises with dedicated infrastructure needs.</p>
+        <hr>
+        <ul>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> Unlimited concurrent devices</li>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> Dedicated bare-metal nodes</li>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> Custom device profiles &amp; ROMs</li>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> VPC peering &amp; SSO / SAML</li>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> 99.99% uptime SLA</li>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> Dedicated solutions engineer</li>
+        </ul>
+        <a href="#" class="btn btn-ghost">Talk to sales</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FAQ ================= -->
+<section class="sec" id="faq" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head center reveal">
+      <div class="eyebrow">FAQ</div>
+      <h2>Questions, answered.</h2>
+    </div>
+
+    <div class="faq reveal">
+      <div class="faq-item">
+        <button class="faq-q">
+          What exactly is a "cloud phone"?
+          <span class="chev"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">
+          <p>A cloud phone is a full Android device running on remote ARM hardware in a data center. You get the complete OS — not an emulator or a container — streamed to your browser or controlled through an API. It behaves like a physical phone in every way that matters to an app.</p>
+        </div></div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q">
+          How is this different from an Android emulator?
+          <span class="chev"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">
+          <p>Emulators run x86 instructions translated to look like ARM, and most apps can detect them. NimbusFarm devices run native ARM64 on real mobile silicon with genuine hardware identifiers, so detection systems see a normal phone.</p>
+        </div></div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q">
+          How fast can I deploy a new fleet?
+          <span class="chev"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">
+          <p>A single device is ready in about 8 seconds. A batch of 500 devices typically finishes provisioning in under 90 seconds, and you can watch each one come online in real time on your dashboard.</p>
+        </div></div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q">
+          Are the devices really isolated from each other?
+          <span class="chev"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">
+          <p>Yes. Each instance is a separate virtual machine with its own kernel, storage, IMEI, MAC address, Android ID, advertising ID, and build fingerprint. There is no shared state between devices on your fleet or anyone else's.</p>
+        </div></div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q">
+          Can I install my own APK or run custom scripts?
+          <span class="chev"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">
+          <p>Absolutely. Upload APKs through the dashboard or API, push files over ADB, and run any automation framework you like — Appium, UiAutomator, Espresso, or your own tooling. Root access is available on request.</p>
+        </div></div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q">
+          How does billing work if I only need devices occasionally?
+          <span class="chev"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">
+          <p>Billing is per device-minute while a device is running. Stopped devices cost nothing and keep their full state, so you can spin up 500 phones for a launch week and pause them the moment you're done.</p>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FINAL CTA ================= -->
+<section class="sec" style="padding-top:0">
+  <div class="wrap">
+    <div class="cta-box reveal">
+      <h2>Your first 10 phones are on us.</h2>
+      <p>Start a free 7-day trial with full API access. No credit card, no sales call, no hardware to unbox.</p>
+      <div class="cta-actions">
+        <a href="#" class="btn btn-primary">
+          Create free account
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+        <a href="#" class="btn btn-ghost">Book a demo</a>
+      </div>
+      <div class="cta-note">Free for 7 days · Cancel anytime · SOC 2 Type II compliant</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a href="#" class="logo">
+          <span class="logo-mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#04070c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/>
+            </svg>
+          </span>
+          KK Farm
+        </a>
+        <p>ARM-native cloud phones for teams that automate Android at scale.</p>
+      </div>
+
+      <div class="foot-col">
+        <h4>Product</h4>
+        <a href="#features">Features</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#usecases">Use cases</a>
+        <a href="#">Changelog</a>
+        <a href="#">Status</a>
+      </div>
+
+      <div class="foot-col">
+        <h4>Developers</h4>
+        <a href="#">Documentation</a>
+        <a href="#">API reference</a>
+        <a href="#">SDKs</a>
+        <a href="#">Guides</a>
+      </div>
+
+      <div class="foot-col">
+        <h4>Company</h4>
+        <a href="#">About</a>
+        <a href="#">Blog</a>
+        <a href="#">Careers</a>
+        <a href="#">Contact</a>
+      </div>
+    </div>
+
+    <div class="foot-bottom">
+      <div>© 2026 KK Farm. All rights reserved.</div>
+      <div class="foot-social">
+        <a href="#" aria-label="X"><svg viewBox="0 0 24 24"><path d="M18.9 2H22l-7.1 8.1L23.2 22h-6.6l-5.1-6.7L5.6 22H2.4l7.6-8.7L1 2h6.8l4.7 6.2L18.9 2zm-1.1 18h1.7L7.3 3.8H5.5L17.8 20z"/></svg></a>
+        <a href="#" aria-label="GitHub"><svg viewBox="0 0 24 24"><path d="M12 .5C5.4.5 0 5.9 0 12.6c0 5.3 3.4 9.8 8.2 11.4.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.6 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12.1 12.1 0 0 0 24 12.6C24 5.9 18.6.5 12 .5z"/></svg></a>
+        <a href="#" aria-label="LinkedIn"><svg viewBox="0 0 24 24"><path d="M20.4 20.4h-3.6v-5.6c0-1.3 0-3-1.9-3s-2.1 1.4-2.1 2.9v5.7H9.3V9h3.4v1.6h.1c.5-.9 1.7-1.9 3.4-1.9 3.6 0 4.3 2.4 4.3 5.5v6.2zM5.3 7.4a2.1 2.1 0 1 1 0-4.2 2.1 2.1 0 0 1 0 4.2zM7.1 20.4H3.5V9h3.6v11.4zM22.2 0H1.8C.8 0 0 .8 0 1.7v20.5c0 1 .8 1.8 1.8 1.8h20.4c1 0 1.8-.8 1.8-1.8V1.7c0-.9-.8-1.7-1.8-1.7z"/></svg></a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  'use strict';
+
+  var header   = document.getElementById('header');
+  var burger   = document.getElementById('burger');
+  var drawer   = document.getElementById('drawer');
+  var navH     = 0;
+
+  /* ---------- measure nav height for drawer offset ---------- */
+  function setNavH(){
+    navH = header ? header.offsetHeight : 64;
+    document.documentElement.style.setProperty('--nav-h', navH + 'px');
+  }
+  setNavH();
+  window.addEventListener('resize', setNavH, {passive:true});
+
+  /* ---------- sticky header state ---------- */
+  var ticking = false;
+  function onScroll(){
+    if(!ticking){
+      requestAnimationFrame(function(){
+        if(window.scrollY > 12) header.classList.add('scrolled');
+        else header.classList.remove('scrolled');
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }
+  onScroll();
+  window.addEventListener('scroll', onScroll, {passive:true});
+
+  /* ---------- mobile drawer ---------- */
+  function openDrawer(){
+    drawer.classList.add('open');
+    burger.classList.add('open');
+    burger.setAttribute('aria-expanded','true');
+    burger.setAttribute('aria-label','Close menu');
+    document.body.classList.add('no-scroll');
+  }
+  function closeDrawer(){
+    drawer.classList.remove('open');
+    burger.classList.remove('open');
+    burger.setAttribute('aria-expanded','false');
+    burger.setAttribute('aria-label','Open menu');
+    document.body.classList.remove('no-scroll');
+  }
+  burger.addEventListener('click', function(){
+    drawer.classList.contains('open') ? closeDrawer() : openDrawer();
+  });
+  drawer.querySelectorAll('a').forEach(function(link){
+    link.addEventListener('click', closeDrawer);
+  });
+  window.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') closeDrawer();
+  });
+  // auto-close if resized to desktop
+  var mqDesktop = window.matchMedia('(min-width: 1000px)');
+  if(mqDesktop.addEventListener){
+    mqDesktop.addEventListener('change', function(e){ if(e.matches) closeDrawer(); });
+  }
+
+  /* ---------- scroll reveal ---------- */
+  var revealEls = document.querySelectorAll('.reveal');
+  if('IntersectionObserver' in window){
+    var ro = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          e.target.classList.add('in');
+          ro.unobserve(e.target);
+        }
+      });
+    }, {threshold:0.1, rootMargin:'0px 0px -50px 0px'});
+    revealEls.forEach(function(el, i){
+      el.style.transitionDelay = (Math.min(i,6) * 55) + 'ms';
+      ro.observe(el);
+    });
+  } else {
+    revealEls.forEach(function(el){ el.classList.add('in'); });
+  }
+
+  /* ---------- animated counters ---------- */
+  var counters = document.querySelectorAll('[data-count]');
+  function runCounter(el){
+    var target   = parseFloat(el.getAttribute('data-count'));
+    var suffix   = el.getAttribute('data-suffix') || '';
+    var decimals = parseInt(el.getAttribute('data-decimals') || '0', 10);
+    var dur = 1600, start = null;
+
+    function step(ts){
+      if(!start) start = ts;
+      var p = Math.min((ts - start) / dur, 1);
+      var eased = p === 1 ? 1 : 1 - Math.pow(2, -10 * p);
+      el.textContent = (target * eased).toFixed(decimals) + suffix;
+      if(p < 1) requestAnimationFrame(step);
+      else el.textContent = target.toFixed(decimals) + suffix;
+    }
+    requestAnimationFrame(step);
+  }
+  if('IntersectionObserver' in window){
+    var co = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){ runCounter(e.target); co.unobserve(e.target); }
+      });
+    }, {threshold:0.5});
+    counters.forEach(function(el){ co.observe(el); });
+  } else {
+    counters.forEach(runCounter);
+  }
+
+  /* ---------- FAQ accordion ---------- */
+  document.querySelectorAll('.faq-item').forEach(function(item){
+    var btn = item.querySelector('.faq-q');
+    btn.addEventListener('click', function(){
+      var isOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item.open').forEach(function(other){
+        if(other !== item) other.classList.remove('open');
+      });
+      item.classList.toggle('open', !isOpen);
+      btn.setAttribute('aria-expanded', String(!isOpen));
+    });
+  });
+
+  /* ---------- pricing toggle ---------- */
+  var toggle = document.getElementById('billingToggle');
+  if(toggle){
+    var btns = toggle.querySelectorAll('button');
+    btns.forEach(function(btn){
+      btn.addEventListener('click', function(){
+        btns.forEach(function(b){ b.classList.remove('active'); });
+        btn.classList.add('active');
+        var cycle = btn.getAttribute('data-cycle');
+        document.querySelectorAll('.plan-price .amt').forEach(function(amt){
+          var val = amt.getAttribute('data-' + cycle);
+          if(val) amt.textContent = val;
+        });
+      });
+    });
+  }
+
+  /* ---------- live fleet counter ---------- */
+  var fleetCount = document.getElementById('fleetCount');
+  if(fleetCount){
+    var base = 1284;
+    setInterval(function(){
+      var n = base + Math.floor(Math.random() * 9) - 4;
+      fleetCount.textContent = n.toLocaleString() + ' online';
+    }, 3200);
+  }
+
+  /* ---------- smooth anchor scroll with nav offset ---------- */
+  document.querySelectorAll('a[href^="#"]').forEach(function(a){
+    a.addEventListener('click', function(ev){
+      var id = a.getAttribute('href');
+      if(id === '#' || id.length < 2) return;
+      var target = document.querySelector(id);
+      if(!target) return;
+      ev.preventDefault();
+      var top = target.getBoundingClientRect().top + window.pageYOffset - (navH + 12);
+      window.scrollTo({top: top, behavior: 'smooth'});
+    });
+  });
+
+  /* ---------- re-measure nav on orientation change (mobile browser chrome) ---------- */
+  window.addEventListener('orientationchange', function(){
+    setTimeout(setNavH, 250);
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "target": "ES2024",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "useDefineForClassFields": true,
+    "rootDir": "./src",
+    "lib": ["ES2024", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "noEmit": true,
+    "types": ["vite/client"],
+    "paths": {
+      "@/*": ["./src/*"],
+      "@shared/*": ["../../shared/src/*"],
+      "@sdc/sdk": ["../../packages/sdk/src/index.ts"]
+    }
+  },
+  "references": [{ "path": "../../packages/sdk" }, { "path": "../../shared" }],
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
+}

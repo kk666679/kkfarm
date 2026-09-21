@@ -1,0 +1,5 @@
+fleet:
+  max_devices_per_proxy: 3
+  min_sdk: 31
+  require_rkp: true
+  health_check_interval_min: 30

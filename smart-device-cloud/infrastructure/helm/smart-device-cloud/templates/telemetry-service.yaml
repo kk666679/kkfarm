@@ -1,0 +1,139 @@
+{{- if .Values.telemetryService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: telemetry-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: telemetry-service
+    app.kubernetes.io/part-of: smart-device-cloud
+    app.kubernetes.io/component: telemetry
+    {{- include "common.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.telemetryService.replicaCount }}
+  selector:
+    matchLabels:
+      app: telemetry-service
+  template:
+    metadata:
+      labels:
+        app: telemetry-service
+        {{- include "common.labels" . | nindent 8 }}
+      annotations:
+        {{- range $key, $value := .Values.telemetryService.podAnnotations }}
+        {{ $key }}: {{ $value }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "serviceAccount.name" . }}-telemetry-service
+      securityContext:
+        {{- toYaml .Values.telemetryService.podSecurityContext | nindent 8 }}
+      containers:
+        - name: telemetry-service
+          image: "{{ .Values.telemetryService.image.repository }}:{{ .Values.telemetryService.image.tag | default .Values.global.imageTag }}"
+          imagePullPolicy: {{ .Values.telemetryService.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.telemetryService.service.targetPort }}
+              name: http
+            - containerPort: {{ .Values.telemetryService.service.grpcPort }}
+              name: grpc
+          envFrom:
+            - secretRef:
+                name: sdc-secrets
+            - configMapRef:
+                name: sdc-config
+          env:
+            {{- range $key, $value := .Values.telemetryService.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.telemetryService.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: {{ .Values.telemetryService.service.targetPort }}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: {{ .Values.telemetryService.service.targetPort }}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 15"]
+          securityContext:
+            {{- toYaml .Values.telemetryService.securityContext | nindent 12 }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - telemetry-service
+                topologyKey: kubernetes.io/hostname
+{{- end }}
+---
+{{- if .Values.telemetryService.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: telemetry-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: telemetry-service
+    {{- include "common.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.telemetryService.service.type }}
+  selector:
+    app: telemetry-service
+  ports:
+    - name: http
+      port: {{ .Values.telemetryService.service.port }}
+      targetPort: {{ .Values.telemetryService.service.targetPort }}
+      protocol: TCP
+    - name: grpc
+      port: {{ .Values.telemetryService.service.grpcPort }}
+      targetPort: {{ .Values.telemetryService.service.grpcPort }}
+      protocol: TCP
+{{- end }}
+---
+{{- if and .Values.telemetryService.enabled .Values.telemetryService.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: telemetry-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "common.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: telemetry-service
+  minReplicas: {{ .Values.telemetryService.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.telemetryService.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.telemetryService.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.telemetryService.autoscaling.targetMemoryUtilizationPercentage }}
+{{- end }}

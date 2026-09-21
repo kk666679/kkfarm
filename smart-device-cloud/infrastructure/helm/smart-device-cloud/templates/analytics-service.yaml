@@ -1,0 +1,139 @@
+{{- if .Values.analyticsService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: analytics-service
+    app.kubernetes.io/part-of: smart-device-cloud
+    app.kubernetes.io/component: analytics
+    {{- include "common.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.analyticsService.replicaCount }}
+  selector:
+    matchLabels:
+      app: analytics-service
+  template:
+    metadata:
+      labels:
+        app: analytics-service
+        {{- include "common.labels" . | nindent 8 }}
+      annotations:
+        {{- range $key, $value := .Values.analyticsService.podAnnotations }}
+        {{ $key }}: {{ $value }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "serviceAccount.name" . }}-analytics-service
+      securityContext:
+        {{- toYaml .Values.analyticsService.podSecurityContext | nindent 8 }}
+      containers:
+        - name: analytics-service
+          image: "{{ .Values.analyticsService.image.repository }}:{{ .Values.analyticsService.image.tag | default .Values.global.imageTag }}"
+          imagePullPolicy: {{ .Values.analyticsService.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.analyticsService.service.targetPort }}
+              name: http
+            - containerPort: {{ .Values.analyticsService.service.grpcPort }}
+              name: grpc
+          envFrom:
+            - secretRef:
+                name: sdc-secrets
+            - configMapRef:
+                name: sdc-config
+          env:
+            {{- range $key, $value := .Values.analyticsService.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.analyticsService.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: {{ .Values.analyticsService.service.targetPort }}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: {{ .Values.analyticsService.service.targetPort }}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 15"]
+          securityContext:
+            {{- toYaml .Values.analyticsService.securityContext | nindent 12 }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - analytics-service
+                topologyKey: kubernetes.io/hostname
+{{- end }}
+---
+{{- if .Values.analyticsService.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: analytics-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: analytics-service
+    {{- include "common.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.analyticsService.service.type }}
+  selector:
+    app: analytics-service
+  ports:
+    - name: http
+      port: {{ .Values.analyticsService.service.port }}
+      targetPort: {{ .Values.analyticsService.service.targetPort }}
+      protocol: TCP
+    - name: grpc
+      port: {{ .Values.analyticsService.service.grpcPort }}
+      targetPort: {{ .Values.analyticsService.service.grpcPort }}
+      protocol: TCP
+{{- end }}
+---
+{{- if and .Values.analyticsService.enabled .Values.analyticsService.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: analytics-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "common.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: analytics-service
+  minReplicas: {{ .Values.analyticsService.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.analyticsService.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.analyticsService.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.analyticsService.autoscaling.targetMemoryUtilizationPercentage }}
+{{- end }}
