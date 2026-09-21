@@ -1,0 +1,34 @@
+{
+  "name": "@smartcloud/mcp",
+  "version": "1.0.0",
+  "description": "Smart Device Cloud MCP integration boundary",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@smart-device-cloud/shared": "file:../../shared",
+    "@smartcloud/device-agent": "file:../device-agent",
+    "@smart-device-cloud/device-protocol": "file:../device-protocol",
+    "@smartcloud/workflow-engine": "file:../workflow-engine",
+    "@smartcloud/integration-hub": "file:../integration-hub",
+    "@smartcloud/device-ai": "file:../device-ai",
+    "@smartcloud/remote-phone": "file:../remote-phone",
+    "@smartcloud/android-emulator": "file:../android-emulator",
+    "@smartcloud/multi-account-browser": "file:../multi-account-browser",
+    "@opentelemetry/api": "^1.9.1",
+    "jose": "^6.2.12",
+    "zod": "^4.6.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.2",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.0",
+    "uuid": "^14.0.2"
+  }
+}

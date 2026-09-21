@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2024",
+    "module": "ESNext",
+    "lib": ["ES2024"],
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "noEmit": true,
+    "paths": {
+      "@smart-device-cloud/shared": ["./smart-device-cloud/shared/src/index.ts"],
+      "@smart-device-cloud/device-dashboard": ["./smart-device-cloud/packages/device-dashboard/src/index.ts"],
+      "@smart-device-cloud/device-dashboard/*": ["./smart-device-cloud/packages/device-dashboard/src/*"],
+      "@smart-device-cloud/device-protocol": ["./smart-device-cloud/packages/device-protocol/src/index.ts"],
+      "@smartcloud/api": ["./smart-device-cloud/services/api/src/public-api.ts"],
+      "@sdc/*": ["./smart-device-cloud/packages/*/src/index.ts"],
+      "@smartcloud/*": ["./smart-device-cloud/packages/*/src/index.ts"]
+    }
+  },
+  "include": ["apps/**/*", "mobile/**/*", "smart-device-cloud/apps/web"]
+}

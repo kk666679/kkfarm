@@ -1,0 +1,57 @@
+{
+  "name": "kk farm",
+  "description": "PhoneFarming - Smart Device Cloud",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "npm@12.0.2",
+  "workspaces": [
+    "phonefarm/*",
+    "mobile/*",
+    "smart-device-cloud/shared",
+    "smart-device-cloud/infrastructure",
+    "smart-device-cloud/packages/*",
+    "smart-device-cloud/services/*",
+    "smart-device-cloud/apps/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "format": "turbo run format"
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "^5.103.1",
+    "@types/node": "^22.20.3",
+    "@typescript-eslint/eslint-plugin": "^8.70.0",
+    "@typescript-eslint/parser": "^8.70.0",
+    "concurrently": "^10.0.5",
+    "esbuild": "^0.28.2",
+    "prettier": "^3.9.7",
+    "turbo": "^2.10.13",
+    "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": "24.21.0",
+    "npm": "12.0.2"
+  },
+  "allowScripts": {
+    "@parcel/watcher@2.6.0": true,
+    "unrs-resolver@1.12.2": true,
+    "bcrypt": true,
+    "esbuild": true,
+    "lefthook": true,
+    "protobufjs": true,
+    "core-js@3.29.1": true,
+    "msgpackr-extract@3.0.4": true,
+    "prisma@6.19.3": true,
+    "@prisma/engines@6.19.3": true,
+    "cron-parser@5.10.1": true,
+    "msgpackr@2.1.0": true
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^6.1.1",
+    "vite": "^8.3.0"
+  }
+}

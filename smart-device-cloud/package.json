@@ -1,0 +1,70 @@
+{
+  "name": "smart-device-cloud",
+  "version": "1.0.0",
+  "description": "Smart Device Cloud platform for managing IoT devices and hardware",
+  "main": "dist/index.js",
+  "private": true,
+  "type": "module",
+  "packageManager": "npm@12.0.2",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "infrastructure/*",
+    "services/*",
+    "shared"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "typecheck": "turbo run type-check",
+    "type-check": "turbo run type-check",
+    "clean": "turbo run clean"
+  },
+  "keywords": [
+    "iot",
+    "device",
+    "cloud",
+    "management"
+  ],
+  "author": "Kurnia Kadir",
+  "license": "MIT",
+  "dependencies": {
+    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/sdk-node": "^0.222.0",
+    "@prisma/client": "^7.10.0",
+    "jose": "^6.2.12",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "zod": "^4.6.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.2",
+    "@types/react": "^19.3.0",
+    "@typescript-eslint/eslint-plugin": "^8.70.0",
+    "@typescript-eslint/parser": "^8.70.0",
+    "eslint": "^10.10.0",
+    "jest": "^30.5.1",
+    "prisma": "^7.10.0",
+    "turbo": "^2.10.12",
+    "typescript": "^6.0.3"
+  },
+  "allowScripts": {
+    "protobufjs@7.6.6": true,
+    "unrs-resolver@1.12.2": true,
+    "@parcel/watcher@2.6.0": true,
+    "core-js@3.29.1": true,
+    "esbuild@0.28.2": true,
+    "msgpackr-extract@3.0.4": true,
+    "prisma@6.19.3": true,
+    "@prisma/engines@6.19.3": true,
+    "bcrypt": true,
+    "lefthook": true
+  },
+  "engines": {
+    "node": ">=24",
+    "npm": ">=12"
+  }
+}
+

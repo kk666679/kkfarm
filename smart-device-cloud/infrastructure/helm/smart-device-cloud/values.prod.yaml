@@ -1,0 +1,109 @@
+global:
+  environment: "production"
+  domain: "sdc.example.com"
+  imageTag: "latest"
+
+apiGateway:
+  replicaCount: 5
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+  autoscaling:
+    minReplicas: 5
+    maxReplicas: 50
+  ingress:
+    host: api.sdc.example.com
+
+telemetryService:
+  replicaCount: 5
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 1Gi
+    limits:
+      cpu: 4000m
+      memory: 4Gi
+  autoscaling:
+    minReplicas: 5
+    maxReplicas: 30
+
+workloadManager:
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+  autoscaling:
+    minReplicas: 3
+    maxReplicas: 20
+
+analyticsService:
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 1Gi
+    limits:
+      cpu: 4000m
+      memory: 4Gi
+  autoscaling:
+    minReplicas: 3
+    maxReplicas: 20
+
+deviceAgent:
+  replicaCount: 10
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  autoscaling:
+    minReplicas: 10
+    maxReplicas: 100
+
+billingService:
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+  autoscaling:
+    minReplicas: 3
+    maxReplicas: 15
+
+mcp:
+  replicaCount: 5
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+  autoscaling:
+    minReplicas: 5
+    maxReplicas: 30
+  ingress:
+    host: mcp.sdc.example.com
+
+ingress:
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+
+networkPolicies:
+  enabled: true
+
+serviceMonitors:
+  enabled: true

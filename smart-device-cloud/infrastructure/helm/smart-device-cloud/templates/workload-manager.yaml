@@ -1,0 +1,139 @@
+{{- if .Values.workloadManager.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: workload-manager
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: workload-manager
+    app.kubernetes.io/part-of: smart-device-cloud
+    app.kubernetes.io/component: workload
+    {{- include "common.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.workloadManager.replicaCount }}
+  selector:
+    matchLabels:
+      app: workload-manager
+  template:
+    metadata:
+      labels:
+        app: workload-manager
+        {{- include "common.labels" . | nindent 8 }}
+      annotations:
+        {{- range $key, $value := .Values.workloadManager.podAnnotations }}
+        {{ $key }}: {{ $value }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "serviceAccount.name" . }}-workload-manager
+      securityContext:
+        {{- toYaml .Values.workloadManager.podSecurityContext | nindent 8 }}
+      containers:
+        - name: workload-manager
+          image: "{{ .Values.workloadManager.image.repository }}:{{ .Values.workloadManager.image.tag | default .Values.global.imageTag }}"
+          imagePullPolicy: {{ .Values.workloadManager.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.workloadManager.service.targetPort }}
+              name: http
+            - containerPort: {{ .Values.workloadManager.service.grpcPort }}
+              name: grpc
+          envFrom:
+            - secretRef:
+                name: sdc-secrets
+            - configMapRef:
+                name: sdc-config
+          env:
+            {{- range $key, $value := .Values.workloadManager.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.workloadManager.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: {{ .Values.workloadManager.service.targetPort }}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: {{ .Values.workloadManager.service.targetPort }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 10"]
+          securityContext:
+            {{- toYaml .Values.workloadManager.securityContext | nindent 12 }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - workload-manager
+                topologyKey: kubernetes.io/hostname
+{{- end }}
+---
+{{- if .Values.workloadManager.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: workload-manager
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: workload-manager
+    {{- include "common.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.workloadManager.service.type }}
+  selector:
+    app: workload-manager
+  ports:
+    - name: http
+      port: {{ .Values.workloadManager.service.port }}
+      targetPort: {{ .Values.workloadManager.service.targetPort }}
+      protocol: TCP
+    - name: grpc
+      port: {{ .Values.workloadManager.service.grpcPort }}
+      targetPort: {{ .Values.workloadManager.service.grpcPort }}
+      protocol: TCP
+{{- end }}
+---
+{{- if and .Values.workloadManager.enabled .Values.workloadManager.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: workload-manager
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "common.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: workload-manager
+  minReplicas: {{ .Values.workloadManager.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.workloadManager.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.workloadManager.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.workloadManager.autoscaling.targetMemoryUtilizationPercentage }}
+{{- end }}
