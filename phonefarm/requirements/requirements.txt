@@ -1,0 +1,47 @@
+# ============================================================================
+# MAIN REQUIREMENTS FILE
+# ============================================================================
+# This file serves as the entry point for installation.
+# It includes all base requirements.
+# For specific use cases, use the specialized requirement files:
+#   - base.txt: Core dependencies
+#   - dev.txt: Development dependencies
+#   - gpu.txt: GPU-specific dependencies
+#   - inference.txt: Minimal inference dependencies
+
+# ============================================================================
+# INSTALL ALL DEPENDENCIES
+# ============================================================================
+# For production with GPU:
+# pip install -r requirements/requirements.txt
+
+# Or install specific requirements:
+# pip install -r requirements/base.txt
+# pip install -r requirements/gpu.txt
+
+# ============================================================================
+# BASE DEPENDENCIES
+# ============================================================================
+-r base.txt
+
+# ============================================================================
+# GPU DEPENDENCIES (Optional - Comment out if CPU-only)
+# ============================================================================
+# Uncomment for GPU support
+# -r gpu.txt
+
+# ============================================================================
+# DEVELOPMENT DEPENDENCIES (Optional - Not for production)
+# ============================================================================
+# Uncomment for development
+# -r dev.txt
+
+# ============================================================================
+# INFERENCE DEPENDENCIES (Optional - For minimal inference)
+# ============================================================================
+# Uncomment for minimal inference setup
+# -r inference.txt
+
+# ============================================================================
+# END OF REQUIREMENTS
+# ============================================================================

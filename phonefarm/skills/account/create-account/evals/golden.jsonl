@@ -1,0 +1,7 @@
+{"input": {"platform": "tiktok", "device_id": "device_001", "username": "test_user_1"}, "expected": {"success": true, "account_id": "acc_*", "platform": "tiktok"}}
+{"input": {"platform": "instagram", "device_id": "device_002", "username": "test_user_2"}, "expected": {"success": true, "account_id": "acc_*", "platform": "instagram"}}
+{"input": {"platform": "youtube", "device_id": "device_003", "username": "test_user_3"}, "expected": {"success": true, "account_id": "acc_*", "platform": "youtube"}}
+{"input": {"platform": "linkedin", "device_id": "device_004", "username": "test_user_4"}, "expected": {"success": true, "account_id": "acc_*", "platform": "linkedin"}}
+{"input": {"platform": "tiktok", "device_id": "device_001", "username": "test_user_5"}, "expected": {"success": true, "account_id": "acc_*", "platform": "tiktok"}}
+{"input": {"platform": "tiktok", "device_id": "device_001", "username": "test_user_6"}, "expected": {"success": true, "account_id": "acc_*", "platform": "tiktok"}}
+{"input": {"platform": "tiktok", "device_id": "device_001", "username": "test_user_7"}, "expected": {"error": "quota_exceeded"}}

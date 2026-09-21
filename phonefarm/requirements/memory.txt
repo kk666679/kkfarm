@@ -1,0 +1,13 @@
+# ============================================================================
+# MEMORY REQUIREMENTS - STM + LTM
+# ============================================================================
+# Install with: pip install -r requirements/memory.txt
+
+# Milvus Lite - Embedded vector database
+milvus-lite>=2.4.0
+
+# SQLite Vec - Vector extension for SQLite
+sqlite-vec>=0.1.0
+
+# BM25 for hybrid search
+rank-bm25>=0.2.2

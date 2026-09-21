@@ -1,0 +1,35 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2024",
+    "module": "preserve",
+    "lib": ["ES2024", "ES2023", "ES2021"],
+    "allowJs": true,
+    "jsx": "react-native",
+    "noEmit": true,
+    "isolatedModules": true,
+    "moduleResolution": "bundler",
+    "allowSyntheticDefaultImports": true,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/types/*": ["./src/types/*"],
+      "@/services/*": ["./src/services/*"],
+      "@/contexts/*": ["./src/contexts/*"],
+      "@/components/*": ["./src/components/*"],
+      "@/screens/*": ["./src/screens/*"],
+      "@/utils/*": ["./src/utils/*"],
+      "@/navigation/*": ["./src/navigation/*"],
+      "@/theme/*": ["./src/theme/*"],
+      "@/stores/*": ["./src/stores/*"],
+      "@/query/*": ["./src/query/*"],
+      "@/sync/*": ["./src/sync/*"],
+      "@/worklets/*": ["./src/worklets/*"],
+      "@/storage/*": ["./src/storage/*"],
+      "@/hooks/*": ["./src/hooks/*"],
+      "@/agents/*": ["./src/agents/*"],
+      "@/stubs/*": ["./src/stubs/*"],
+      "@smart-device-cloud/shared": ["../../smart-device-cloud/shared/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "babel.config.js", "metro.config.js", "jest.config.js"]
+}

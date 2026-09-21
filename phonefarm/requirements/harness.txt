@@ -1,0 +1,10 @@
+# ============================================================================
+# HARNESS REQUIREMENTS - Strands Agents SDK
+# ============================================================================
+# Install with: pip install -r requirements/harness.txt
+
+# Strands Agents - Production agent framework
+strands-agents>=1.0.0
+
+# Pydantic AI - Type-safe agent framework (alternative)
+pydantic-deep>=0.3.43

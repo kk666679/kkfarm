@@ -1,0 +1,10 @@
+# ============================================================================
+# SKILLS REQUIREMENTS - Agent Skills Spec V1.0
+# ============================================================================
+# Install with: pip install -r requirements/skills.txt
+
+# Agent Skills Specification
+agent-skills>=0.5.0
+
+# Haiku Skills (skill runtime)
+haiku-skills>=0.18.1

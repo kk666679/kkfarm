@@ -1,0 +1,7 @@
+# ============================================================================
+# MCP REQUIREMENTS - Stateless MCP 2026-07-28
+# ============================================================================
+# Install with: pip install -r requirements/mcp.txt
+
+# MCP Python SDK v2 (stateless)
+mcp>=2.0.0

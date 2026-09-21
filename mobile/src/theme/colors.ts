@@ -1,0 +1,38 @@
+﻿export const colors = {
+  primary: '#6C63FF',
+  primaryLight: '#8B83FF',
+  primaryDark: '#4A42B5',
+  secondary: '#FF6B6B',
+  success: '#2ECC71',
+  warning: '#F39C12',
+  error: '#E74C3C',
+  info: '#3498DB',
+  background: '#F8F9FA',
+  surface: '#FFFFFF',
+  card: '#FFFFFF',
+  text: '#2D3436',
+  textSecondary: '#636E72',
+  textLight: '#B2BEC3',
+  border: '#DFE6E9',
+  divider: '#ECF0F1',
+  android: '#3DDC84',
+  ios: '#34C759',
+  status: {
+    idle: '#95A5A6',
+    busy: '#F39C12',
+    error: '#E74C3C',
+    offline: '#7F8C8D',
+    charging: '#2ECC71',
+    completed: '#2ECC71',
+    pending: '#F39C12',
+    failed: '#E74C3C',
+    online: '#2ECC71',
+    maintenance: '#3498DB',
+  },
+  gradient: {
+    start: '#6C63FF',
+    end: '#4A42B5',
+  },
+};
+
+export default colors;

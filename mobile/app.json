@@ -1,0 +1,16 @@
+﻿{
+  "name": "KKFarm",
+  "displayName": "KK Farm",
+  "version": "2.0.0",
+  "expo": {
+    "name": "KK Farm",
+    "slug": "kk-farm",
+    "version": "2.0.0",
+    "scheme": "kkfarm",
+    "platforms": ["ios", "android", "web"],
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    }
+  }
+}

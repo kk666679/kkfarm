@@ -1,0 +1,682 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  merge_group:
+    types: [checks_requested]
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * *"
+
+# Cancel in-flight runs for the same ref
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Minimal top-level permissions; jobs elevate as needed
+permissions:
+  contents: read
+  actions: read
+
+env:
+  # Pin Node to LTS + support current
+  NODE_VERSION: "24"
+  NODE_VERSION_NEXT: "26"
+  # Turbo/remote cache
+  TURBO_TELEMETRY_DISABLED: 1
+  # CI optimization
+  CI: true
+  FORCE_COLOR: 1
+  NPM_CONFIG_FUND: false
+  NPM_CONFIG_AUDIT: false
+
+jobs:
+  # ─────────────────────────────────────────────────────────────
+  # Metadata: compute changed packages for affected-based builds
+  # ─────────────────────────────────────────────────────────────
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-24.04
+    outputs:
+      api: ${{ steps.filter.outputs.api }}
+      web: ${{ steps.filter.outputs.web }}
+      packages: ${{ steps.filter.outputs.packages }}
+      infra: ${{ steps.filter.outputs.infra }}
+      docs: ${{ steps.filter.outputs.docs }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            api:
+              - 'apps/api/**'
+              - 'packages/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'turbo.json'
+            web:
+              - 'apps/web/**'
+              - 'packages/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'turbo.json'
+            packages:
+              - 'packages/**'
+            infra:
+              - 'infrastructure/**'
+              - 'docker-compose*.yml'
+              - '.github/workflows/**'
+            docs:
+              - 'docs/**'
+              - '**/*.md'
+
+  # ─────────────────────────────────────────────────────────────
+  # Fast feedback: Lint, format, typecheck (parallel)
+  # ─────────────────────────────────────────────────────────────
+  lint:
+    name: Lint & Format
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Setup Turborepo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-lint-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-lint-
+            ${{ runner.os }}-turbo-
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run Prettier check
+        run: npx prettier --check "**/*.{ts,tsx,js,jsx,json,md,yaml,yml}"
+
+      - name: Check for forbidden patterns
+        run: |
+          ! grep -rn "console\.log" apps/*/src --include="*.ts" --include="*.tsx" \
+            --exclude="*.test.ts" --exclude="*.spec.ts" || \
+            (echo "❌ Found console.log statements" && exit 1)
+
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ["24", "26"]
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+
+      - run: npm ci --prefer-offline --no-audit
+
+      - name: Verify Cloud type-check scripts
+        working-directory: smart-device-cloud
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import path from 'node:path';
+
+          const roots = ['shared', 'packages', 'services', 'apps'];
+          const manifests = [];
+          for (const root of roots) {
+            const entries = root === 'shared'
+              ? [root]
+              : fs.readdirSync(root, { withFileTypes: true })
+                  .filter((entry) => entry.isDirectory())
+                  .map((entry) => path.join(root, entry.name));
+            manifests.push(...entries.map((entry) => path.join(entry, 'package.json')));
+          }
+
+          const invalid = manifests.filter((file) => {
+            const pkg = JSON.parse(fs.readFileSync(file, 'utf8'));
+            return !pkg.scripts?.['type-check'];
+          });
+          if (invalid.length) {
+            console.error(`Missing type-check script:\n${invalid.join('\n')}`);
+            process.exit(1);
+          }
+          NODE
+
+      - name: Install Cloud dependencies
+        run: npm install --prefix smart-device-cloud --ignore-scripts --no-audit --no-fund
+
+      - name: Run Cloud type-check with continue
+        working-directory: smart-device-cloud
+        run: npx turbo run type-check --continue
+
+      - name: Setup Turborepo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-node${{ matrix.node-version }}-turbo-typecheck-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-node${{ matrix.node-version }}-turbo-typecheck-
+            ${{ runner.os }}-node${{ matrix.node-version }}-turbo-
+
+      - name: Run TypeScript compiler
+        run: npm run typecheck
+
+  # ─────────────────────────────────────────────────────────────
+  # Testing: sharded parallel execution
+  # ─────────────────────────────────────────────────────────────
+  test-api:
+    name: Test API (shard ${{ matrix.shard }}/4)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    needs: [changes]
+    if: needs.changes.outputs.api == 'true' || github.event_name == 'workflow_dispatch'
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: farms
+          POSTGRES_PASSWORD: farms_test
+          POSTGRES_DB: farms_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U farms" --health-interval 10s --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - run: npm ci --prefer-offline --no-audit
+
+      - name: Cache Vitest
+        uses: actions/cache@v4
+        with:
+          path: apps/api/node_modules/.vite
+          key: ${{ runner.os }}-vitest-api-${{ hashFiles('apps/api/package-lock.json') }}
+
+      - name: Run API tests (sharded)
+        run: npm run test --workspace=apps/api -- --shard=${{ matrix.shard }}/4 --reporter=blob
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://farms:farms_test@localhost:5432/farms_test
+          REDIS_URL: redis://localhost:6379
+
+      - name: Upload blob report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-blob-report-${{ matrix.shard }}
+          path: apps/api/.vitest-reports
+          retention-days: 3
+
+  test-web:
+    name: Test Web (shard ${{ matrix.shard }}/4)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    needs: [changes]
+    if: needs.changes.outputs.web == 'true' || github.event_name == 'workflow_dispatch'
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+      - run: npm ci --prefer-offline --no-audit
+
+      - name: Run Web tests (sharded)
+        run: npm run test --workspace=apps/web -- --shard=${{ matrix.shard }}/4 --reporter=blob
+
+      - name: Upload blob report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-blob-report-${{ matrix.shard }}
+          path: apps/web/.vitest-reports
+          retention-days: 3
+
+  # Merge sharded coverage from both apps
+  coverage:
+    name: Merge Coverage
+    runs-on: ubuntu-24.04
+    needs: [test-api, test-web]
+    if: always() && (needs.test-api.result == 'success' || needs.test-web.result == 'success')
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+      - run: npm ci --prefer-offline --no-audit
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: "*-blob-report-*"
+          path: coverage-input
+          merge-multiple: false
+
+      - name: Merge reports
+        run: npx vitest --merge-reports=coverage-input
+
+      - name: Upload merged coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+          # OIDC-based upload (no token needed)
+          use_oidc: true
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        continue-on-error: true
+
+  # ─────────────────────────────────────────────────────────────
+  # Build: Matrix across Node versions with build caching
+  # ─────────────────────────────────────────────────────────────
+  build:
+    name: Build (${{ matrix.package }} / Node ${{ matrix.node }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    needs: [lint, typecheck, coverage]
+    if: always() && (needs.lint.result == 'success' && needs.typecheck.result == 'success')
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [api, web]
+        node: ["24"]
+        include:
+          - package: api
+            node: "26"
+            experimental: true
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node }}
+          cache: "npm"
+      - run: npm ci --prefer-offline --no-audit
+
+      - name: Setup Turborepo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-build-${{ matrix.package }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-build-${{ matrix.package }}-
+            ${{ runner.os }}-turbo-build-
+
+      - name: Build ${{ matrix.package }}
+        run: npm run build --workspace=apps/${{ matrix.package }}
+        continue-on-error: ${{ matrix.experimental == true }}
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
+
+      - name: Upload build artifact
+        if: matrix.experimental != true
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.package }}-build-${{ matrix.node }}
+          path: apps/${{ matrix.package }}/dist
+          retention-days: 7
+          compression-level: 6
+
+  # ─────────────────────────────────────────────────────────────
+  # Supply Chain Security (parallel, independent)
+  # ─────────────────────────────────────────────────────────────
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+      - run: npm ci --prefer-offline --no-audit
+
+      - name: npm audit
+        run: npm audit --production --audit-level=high
+        continue-on-error: true
+
+      - name: Generate SBOM (CycloneDX)
+        run: npx @cyclonedx/cyclonedx-npm --output-file sbom.cdx.json
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-cyclonedx
+          path: sbom.cdx.json
+          retention-days: 90
+
+  sast:
+    name: Static Analysis (CodeQL)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ["javascript-typescript"]
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-and-quality
+          config: |
+            paths-ignore:
+              - '**/node_modules'
+              - '**/dist'
+              - '**/*.test.ts'
+              - '**/*.spec.ts'
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v4
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:${{ matrix.language }}"
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          deny-licenses: GPL-2.0, GPL-3.0, AGPL-3.0
+          comment-summary-in-pr: always
+
+  # ─────────────────────────────────────────────────────────────
+  # Container build with SBOM + provenance (SLSA L3)
+  # ─────────────────────────────────────────────────────────────
+  docker-build:
+    name: Build Container (${{ matrix.component }} / ${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    needs: [build]
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    strategy:
+      fail-fast: false
+      matrix:
+        component: [api, web]
+        include:
+          - arch: amd64
+            platform: linux/amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        if: matrix.arch != 'amd64'
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build image (push by digest)
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./infrastructure/docker/${{ matrix.component }}.Dockerfile
+          platforms: ${{ matrix.platform }}
+          push: true
+          tags: ghcr.io/${{ github.repository }}-${{ matrix.component }}:ci-${{ github.sha }}
+          outputs:
+            type=image,name=ghcr.io/${{ github.repository }}-${{ matrix.component
+            }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=${{ matrix.component }}-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.component }}-${{ matrix.arch }}
+          provenance: mode=max
+          sbom: true
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ github.event.head_commit.timestamp }}
+
+      - name: Export digest
+        run: |
+          mkdir -p /tmp/digests
+          echo "${{ steps.build.outputs.digest }}" > /tmp/digests/${{ matrix.component }}-${{ matrix.arch }}
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digest-${{ matrix.component }}-${{ matrix.arch }}
+          path: /tmp/digests/*
+          retention-days: 1
+
+  # Merge multi-arch manifests
+  docker-merge:
+    name: Merge Container Manifests
+    runs-on: ubuntu-24.04
+    needs: [docker-build]
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    strategy:
+      matrix:
+        component: [api, web]
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: digest-${{ matrix.component }}-*
+          path: /tmp/digests
+          merge-multiple: true
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create manifest list
+        working-directory: /tmp/digests
+        run: |
+          docker buildx imagetools create \
+            -t ghcr.io/${{ github.repository }}-${{ matrix.component }}:ci-${{ github.sha }} \
+            -t ghcr.io/${{ github.repository }}-${{ matrix.component }}:ci-latest \
+            $(printf 'ghcr.io/${{ github.repository }}-${{ matrix.component }}@sha256:%s ' *)
+
+      - name: Inspect manifest
+        run:
+          docker buildx imagetools inspect ghcr.io/${{ github.repository }}-${{ matrix.component
+          }}:ci-${{ github.sha }}
+
+  container-scan:
+    name: Scan Container (${{ matrix.component }})
+    runs-on: ubuntu-24.04
+    needs: [docker-merge]
+    if: always() && needs.docker-merge.result == 'success'
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      matrix:
+        component: [api, web]
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Run Trivy (image)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ghcr.io/${{ github.repository }}-${{ matrix.component }}:ci-${{ github.sha }}
+          format: "sarif"
+          output: "trivy-${{ matrix.component }}.sarif"
+          severity: "CRITICAL,HIGH"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+
+      - name: Upload Trivy SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: trivy-${{ matrix.component }}.sarif
+          category: trivy-${{ matrix.component }}
+
+      - name: Run Grype
+        uses: anchore/scan-action@v4
+        with:
+          image: ghcr.io/${{ github.repository }}-${{ matrix.component }}:ci-${{ github.sha }}
+          fail-build: true
+          severity-cutoff: high
+          output-format: sarif
+
+      - name: Run Dockle (lint)
+        uses: erzz/dockle-action@v1
+        with:
+          image: ghcr.io/${{ github.repository }}-${{ matrix.component }}:ci-${{ github.sha }}
+          exit-code: "1"
+          failure-threshold: WARN
+
+  # ─────────────────────────────────────────────────────────────
+  # OpenSSF Scorecard (weekly + on main)
+  # ─────────────────────────────────────────────────────────────
+  scorecard:
+    name: OpenSSF Scorecard
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      security-events: write
+      id-token: write
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: ossf/scorecard-action@v2.4.0
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
+
+      - uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: results.sarif
+
+  # ─────────────────────────────────────────────────────────────
+  # Gate: Aggregate all checks
+  # ─────────────────────────────────────────────────────────────
+  all-checks:
+    name: All Checks Passed
+    runs-on: ubuntu-24.04
+    needs:
+      - lint
+      - typecheck
+      - coverage
+      - build
+      - security-audit
+      - sast
+      - container-scan
+    if: always()
+    steps:
+      - name: Evaluate results
+        run: |
+          set -e
+          declare -A results=(
+            ["lint"]="${{ needs.lint.result }}"
+            ["typecheck"]="${{ needs.typecheck.result }}"
+            ["coverage"]="${{ needs.coverage.result }}"
+            ["build"]="${{ needs.build.result }}"
+            ["security-audit"]="${{ needs.security-audit.result }}"
+            ["sast"]="${{ needs.sast.result }}"
+            ["container-scan"]="${{ needs.container-scan.result }}"
+          )
+
+          failed=0
+          for job in "${!results[@]}"; do
+            status="${results[$job]}"
+            if [[ "$status" != "success" && "$status" != "skipped" ]]; then
+              echo "❌ $job: $status"
+              failed=1
+            else
+              echo "✅ $job: $status"
+            fi
+          done
+
+          if [[ $failed -eq 1 ]]; then
+            echo "::error::Some required checks failed"
+            exit 1
+          fi
+          echo "🎉 All checks passed!"
