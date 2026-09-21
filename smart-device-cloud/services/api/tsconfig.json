@@ -1,0 +1,25 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2024",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2024"],
+    "declaration": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "rootDir": "../..",
+    "paths": {
+      "@smart-device-cloud/shared": ["../../smart-device-cloud/shared/src/index.ts"],
+      "@smart-device-cloud/device-protocol": ["../../smart-device-cloud/packages/device-protocol/src/index.ts"]
+    },
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "outDir": "dist",
+    "exactOptionalPropertyTypes": false
+  },
+  "include": ["src/**/*", "src/types/**/*"],
+  "exclude": ["node_modules", "dist", "src/__tests__"]
+}
