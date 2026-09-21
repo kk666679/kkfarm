@@ -1,0 +1,8 @@
+platforms:
+  tiktok:    { char_limit: 4000, hashtag_limit: 5 }
+  instagram: { char_limit: 2200, hashtag_limit: 5 }
+  youtube:   { char_limit: 5000, hashtag_limit: 15 }
+  x:         { char_limit: 280,  hashtag_limit: 2 }
+  linkedin:  { char_limit: 3000, hashtag_limit: 5 }
+  facebook:  { char_limit: 63206, hashtag_limit: 2 }
+  threads:   { char_limit: 500,  hashtag_limit: 1 }

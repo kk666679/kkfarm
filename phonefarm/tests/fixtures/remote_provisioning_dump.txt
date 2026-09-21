@@ -1,0 +1,2 @@
+default: hwVersion=1 rpcAuthorName=GOOGLE
+default: hwVersion=1 rpcAuthorName=SAMSUNG
