@@ -1,0 +1,14 @@
+{
+  "extends": "../../apps/web/tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "types": ["vite/client", "node", "vitest/globals"]
+  },
+  "include": [
+    "src/main.tsx",
+    "src/App.tsx",
+    "src/index.ts",
+    "src/components/index.ts",
+    "src/pages/index.ts"
+  ]
+}
