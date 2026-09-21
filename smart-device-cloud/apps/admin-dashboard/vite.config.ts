@@ -6,11 +6,11 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: Number(process.env.DASHBOARD_PORT ?? 5174),
-    strictPort: true,
+    strictPort: process.env.VITE_STRICT_PORT === 'true',
     host: '0.0.0.0',
     preview: {
       port: Number(process.env.DASHBOARD_PREVIEW_PORT ?? 4174),
-    strictPort: process.env.VITE_STRICT_PORT === 'true',
+      strictPort: true,
       host: '0.0.0.0',
     },
     proxy: {
