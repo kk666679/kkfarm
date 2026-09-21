@@ -10,7 +10,7 @@ export default defineConfig({
     host: '0.0.0.0',
     preview: {
       port: Number(process.env.DASHBOARD_PREVIEW_PORT ?? 4174),
-      strictPort: true,
+    strictPort: process.env.VITE_STRICT_PORT === 'true',
       host: '0.0.0.0',
     },
     proxy: {

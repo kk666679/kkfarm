@@ -24,7 +24,7 @@ export default defineConfig({
 
   server: {
     port: Number(process.env.VITE_PORT ?? 5173),
-    strictPort: true,          // ← fail loudly on port conflicts
+    strictPort: process.env.VITE_STRICT_PORT === 'true',
     host: '0.0.0.0',
     open: false,               // ← no xdg-open in Codespaces/CI
     proxy: {
