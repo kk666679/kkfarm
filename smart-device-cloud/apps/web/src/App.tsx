@@ -148,8 +148,8 @@ export function App() {
               <Route key={from} path={from} element={<Navigate to={to} replace />} />
             ))}
 
-            {/* Root → dashboard */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            {/* Root → public landing page */}
+            <Route path="/" element={<Navigate to="/landing" replace />} />
 
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />
