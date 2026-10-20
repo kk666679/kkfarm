@@ -99,6 +99,7 @@ export function App() {
         {/* ---------------------------------------------------- */}
         <Route path="/login" element={<Login />} />
         <Route path="/landing" element={<Landing />} />
+        <Route path="/" element={<Landing />} />
 
         {/* ---------------------------------------------------- */}
         {/*  Authenticated + laid out                           */}
@@ -147,9 +148,6 @@ export function App() {
             {LEGACY_REDIRECTS.map(({ from, to }) => (
               <Route key={from} path={from} element={<Navigate to={to} replace />} />
             ))}
-
-            {/* Root → public landing page */}
-            <Route path="/" element={<Navigate to="/landing" replace />} />
 
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />

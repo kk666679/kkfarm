@@ -1,14 +1,14 @@
-import Nav from '@/components/landing/Nav';
-import Hero from '@/components/landing/Hero';
-import { Features } from '@/components/landing/Features';
-import { HowItWorks } from '@/components/landing/HowItWorks';
-import { UseCases } from '@/components/landing/UseCases';
-import { Metrics } from '@/components/landing/Metrics';
-import { Pricing } from '@/components/landing/Pricing';
-import { FAQ } from '@/components/landing/FAQ';
-import { CTABanner } from '@/components/landing/CTABanner';
-import Trust from '@/components/landing/Trust';
-import Footer from '@/components/landing/Footer';
+import Nav from './components/Nav';
+import Hero from './components/Hero';
+import { Features } from './components/Features';
+import { HowItWorks } from './components/HowItWorks';
+import { UseCases } from './components/UseCases';
+import { Metrics } from './components/Metrics';
+import { Pricing } from './components/Pricing';
+import { FAQ } from './components/FAQ';
+import { CTABanner } from './components/CTABanner';
+import Trust from './components/Trust';
+import Footer from './components/Footer';
 
 import { useSmoothAnchors } from '@/hooks/useSmoothAnchor';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
